@@ -1,0 +1,35 @@
+License for This Application
+Copyright (c) 2025 Rikiza89
+
+This application is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). Full text: https://www.gnu.org/licenses/agpl-3.0.html
+
+Third-Party Licenses
+This application depends on open-source software. Their original licenses apply.
+
+Flask — BSD-3-Clause License https://opensource.org/licenses/BSD-3-Clause
+
+Flask-SocketIO — MIT License https://opensource.org/licenses/MIT
+
+python-socketio — MIT License https://opensource.org/licenses/MIT
+
+eventlet — MIT License https://opensource.org/licenses/MIT
+
+OpenCV-Python — Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
+
+NumPy — BSD-3-Clause License https://opensource.org/licenses/BSD-3-Clause
+
+Pillow — PIL Software License (HPND) https://github.com/python-pillow/Pillow/blob/main/LICENSE
+
+PyYAML — MIT License https://opensource.org/licenses/MIT
+
+Attribution Summary
+This application includes software developed by:
+
+Pallets (Flask)
+Miguel Grinberg (Flask-SocketIO, python-socketio)
+OpenCV contributors
+NumPy developers
+Fredrik Lundh and contributors (Pillow)
+Kirill Simonov (PyYAML)
+Linden Research (eventlet)
+Each component retains its original license.
