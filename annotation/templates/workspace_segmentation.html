@@ -1,0 +1,2613 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - BILT Annotation Tool{% endblock %}
+
+{% block content %}
+<div class="row mt-3" id="dashboard">
+    <!-- Sidebar -->
+    <div class="col-md-3 sidebar">
+        <div class="p-3" id="sidebar-widgets">
+            <!-- Camera Controls -->
+            <div class="card mb-3" id="cameraCard" data-id="cameraCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-camera"></i> Camera</h6>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#cameraBody">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="cameraBody" class="collapse show">
+                    <div class="card-body">
+                        <select id="cameraSelect" class="form-select mb-2">
+                            <option value="">Select Camera</option>
+                        </select>
+                        <select id="resolutionSelect" class="form-select mb-2">
+                            <option value="4k">4K (3840×2160)</option>
+                            <option value="1080p" selected>Full HD (1920×1080)</option>
+                            <option value="720p">HD (1280×720)</option>
+                            <option value="480p">SD (640×480)</option>
+                            <option value="360p">Low (480×360)</option>
+                        </select>
+                        <div class="btn-group w-100 mb-2">
+                            <button id="startCamera" class="btn btn-success btn-sm">Start</button>
+                            <button id="stopCamera" class="btn btn-danger btn-sm">Stop</button>
+                        </div>
+                        <button id="captureImage" class="btn btn-primary w-100" disabled>
+                            <i class="fas fa-camera"></i> Capture
+                        </button>
+                        <div class="mt-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="captureToSplit" checked>
+                                <label class="form-check-label" for="captureToSplit">
+                                    <span id="captureToSplitLabel">Save to Train</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classes Management -->
+            <div class="card mb-3" id="classesCard" data-id="classesCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-tags"></i> Classes</h6>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#classesBody">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="classesBody" class="collapse show">
+                    <div class="card-body">
+                        <div id="classesList"></div>
+                        <div class="input-group mt-2">
+                            <input type="text" id="newClassName" class="form-control form-control-sm" placeholder="New class">
+                            <button id="addClass" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Type Selection -->
+            <div class="card mb-3" id="taskCard" data-id="taskCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-tasks"></i> Task Type</h6>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#taskBody">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="taskBody" class="collapse show">
+                    <div class="card-body">
+                        <select id="taskTypeSelect" class="form-select">
+                            <option value="detect">Detection (BBox)</option>
+                        </select>
+                        <small class="text-muted mt-2 d-block">Change task type for this project</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Images List -->
+            <div class="card" id="imagesCard" data-id="imagesCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-images"></i> Images</h6>
+                    <div>
+                        <div class="btn-group btn-group-sm me-2">
+                            <button id="showTrain" class="btn btn-outline-primary active">Train</button>
+                            <button id="showVal" class="btn btn-outline-primary">Val</button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#imagesBody">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="imagesBody" class="collapse show">
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div id="imagesList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9" id="main-widgets">
+
+        <!-- Camera Feed Widget -->
+        <div class="card mb-3" id="feedCard" data-id="feedCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><i class="fas fa-video"></i> Camera Feed</h6>
+                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#feedBody">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div id="feedBody" class="collapse show">
+                <div class="card-body text-center">
+                    <img id="cameraFeed" class="camera-feed" style="display: none;">
+                    <div id="cameraPlaceholder" class="p-5 bg-light border">
+                        <i class="fas fa-video-slash fa-3x text-muted"></i>
+                        <p class="mt-2 text-muted">Camera not active</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Annotation Canvas Widget -->
+        <div class="card mb-3" id="annotationCard" data-id="annotationCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><i class="fas fa-edit"></i> Annotation</h6>
+                <div>
+                    <!-- Navigation Controls -->
+                    <div class="btn-group me-2" role="group">
+                        <button id="prevImage" class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="nextImage" class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <span id="imageCounter" class="text-muted small me-2">No image</span>
+                    <button id="saveLabels" class="btn btn-success btn-sm" disabled>Save</button>
+                    <button id="clearLabels" class="btn btn-warning btn-sm" disabled>Clear</button>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#annotationBody">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="btn-group me-2" role="group">
+                <button id="zoomIn" class="btn btn-outline-secondary btn-sm" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoomOut" class="btn btn-outline-secondary btn-sm" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button id="zoomReset" class="btn btn-outline-secondary btn-sm" title="Reset Zoom">
+                    <i class="fas fa-compress"></i>
+                </button>
+            </div>
+
+            <div id="annotationBody" class="collapse show">
+                <div class="card-body">
+                    <div id="annotationContainer" style="position: relative;">
+                        <canvas id="annotationCanvas" class="annotation-canvas" style="display: none;"></canvas>
+                        <div id="annotationPlaceholder" class="p-5 bg-light border text-center">
+                            <i class="fas fa-mouse-pointer fa-3x text-muted"></i>
+                            <p class="mt-2 text-muted">Select an image to annotate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relabeling Widget -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card mb-3" id="relabelCard" data-id="relabelCard">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-sync-alt"></i> Relabel Images</h6>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#relabelBody">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="relabelBody" class="collapse">
+                        <div class="card-body">
+                            <!-- Model Selection -->
+                            <div class="mb-3">
+                                <label class="form-label">Select Model</label>
+                                <select id="relabelModelSelect" class="form-select">
+                                    <option value="">Loading models...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- External Model Path -->
+                            <div class="mb-3">
+                                <label class="form-label">Or Browse External Model (.pth file)</label>
+                                <div class="input-group">
+                                    <input type="text" id="externalModelPath" class="form-control" placeholder="C:\path\to\model.pth">
+                                    <button id="addExternalModel" class="btn btn-outline-secondary">
+                                        <i class="fas fa-folder-open"></i> Add
+                                    </button>
+                                </div>
+                                <small class="text-muted">Enter full path to a .pth model file</small>
+                            </div>
+                            
+                            <!-- Target Split -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Target Dataset</label>
+                                    <select id="relabelSplit" class="form-select">
+                                        <option value="train">Train</option>
+                                        <option value="val">Validation</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Relabel Mode</label>
+                                    <select id="relabelMode" class="form-select">
+                                        <option value="all">All Images</option>
+                                        <option value="labeled">Only Labeled</option>
+                                        <option value="unlabeled">Only Unlabeled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="relabelBackup" checked>
+                                        <label class="form-check-label" for="relabelBackup">
+                                            Backup labels
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Detection Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Confidence Threshold</label>
+                                    <input type="number" id="relabelConf" class="form-control" value="0.25" step="0.05" min="0.1" max="0.9">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">IoU Threshold</label>
+                                    <input type="number" id="relabelIou" class="form-control" value="0.45" step="0.05" min="0.1" max="0.9">
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2">
+                                <button id="startRelabel" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i> Start Relabeling
+                                </button>
+                                <button id="refreshRelabelModels" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo"></i> Refresh Models
+                                </button>
+                            </div>
+                            
+                            <!-- Status -->
+                            <div id="relabelStatus" class="mt-3 text-muted"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Autotrain Section -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card mb-3" id="autotrainCard" data-id="autotrainCard">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-magic"></i> Auto Training</h6>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#autotrainBody">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="autotrainBody" class="collapse">
+                        <div class="card-body">
+                            <div id="autotrainModelStatus" class="alert alert-info">
+                                Checking for best.pth model...
+                            </div>
+
+                            <div id="modelSelectionDiv" style="display: none;" class="mb-3">
+                                <label class="form-label">Select Model</label>
+                                <select id="modelPathSelect" class="form-select">
+                                </select>
+                            </div>
+                            
+                            <div id="autotrainControls" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Epochs</label>
+                                        <input type="number" id="autoEpochs" class="form-control" value="50" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Image Size</label>
+                                        <select id="autoImgSize" class="form-select">
+                                            <option value="640">640x640</option>
+                                            <option value="800">800x800</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Batch Size</label>
+                                        <input type="number" id="autoBatch" class="form-control" value="16" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Device</label>
+                                        <select id="autoDevice" class="form-select">
+                                            <option value="cpu">CPU</option>
+                                            <option value="0">GPU 0</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Conf Threshold</label>
+                                        <input type="number" id="autoConfThreshold" class="form-control" value="0.25" step="0.05" min="0.1" max="0.9">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">IoU Threshold</label>
+                                        <input type="number" id="autoIouThreshold" class="form-control" value="0.45" step="0.05" min="0.1" max="0.9">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Learning Rate</label>
+                                        <input type="number" id="autoLr0" class="form-control" value="0.01" step="0.001" min="0.0001">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Patience</label>
+                                        <input type="number" id="autoPatience" class="form-control" value="50" min="10">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="autoBackup" checked>
+                                    <label class="form-check-label" for="autoBackup">
+                                        Create backup before training
+                                    </label>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button id="startAutotrain" class="btn btn-success">
+                                        <i class="fas fa-magic"></i> Start Auto Training
+                                    </button>
+                                    <button id="saveAutoConfig" class="btn btn-outline-secondary">
+                                        <i class="fas fa-save"></i> Save Config
+                                    </button>
+                                    <button id="loadAutoConfig" class="btn btn-outline-secondary">
+                                        <i class="fas fa-download"></i> Load Config
+                                    </button>
+                                </div>
+                                
+                                <div id="autotrainStatus" class="mt-3 text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Section -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card mb-3" id="trainingCard" data-id="trainingCard">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-cogs"></i> Training Configuration</h6>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#trainingBody">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#advancedSettings">
+                                <i class="fas fa-sliders-h"></i> Advanced
+                            </button>
+                        </div>
+                    </div>
+                    <div id="trainingBody" class="collapse show">
+                        <div class="card-body">
+                        <!-- Basic Settings -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Model</label>
+                                <select id="modelSelect" class="form-select">
+                                    <option value="scratch">Scratch</option>
+                                    <option value="best.pth">best.pth</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Save as (optional)</label>
+                                <input type="text" id="customModelName" class="form-control" 
+                                    placeholder="custom_model.pt">
+                                <small class="text-muted">Leave empty for default</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Epochs</label>
+                                <input type="number" id="epochsInput" class="form-control" 
+                                       value="100" min="1" max="1000">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Image Size</label>
+                                <select id="imageSizeSelect" class="form-select">
+                                    <option value="320">320x320</option>
+                                    <option value="416">416x416</option>
+                                    <option value="512">512x512</option>
+                                    <option value="640" selected>640x640</option>
+                                    <option value="800">800x800</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Batch Size</label>
+                                <input type="number" id="batchSizeInput" class="form-control" 
+                                       value="16" min="1" max="64">
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings (Collapsible) -->
+                        <div class="collapse" id="advancedSettings">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Learning Rate</label>
+                                    <input type="number" id="learningRateInput" class="form-control" 
+                                           value="0.01" step="0.001" min="0.0001" max="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Momentum</label>
+                                    <input type="number" id="momentumInput" class="form-control" 
+                                           value="0.937" step="0.01" min="0.1" max="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Weight Decay</label>
+                                    <input type="number" id="weightDecayInput" class="form-control" 
+                                           value="0.0005" step="0.0001" min="0" max="0.01">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Warmup Epochs</label>
+                                    <input type="number" id="warmupEpochsInput" class="form-control" 
+                                           value="3" min="0" max="10">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">IoU Threshold</label>
+                                    <input type="number" id="iouInput" class="form-control" 
+                                           value="0.7" step="0.05" min="0.1" max="0.9">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Class Loss Gain</label>
+                                    <input type="number" id="clsInput" class="form-control" 
+                                           value="0.5" step="0.1" min="0.1" max="2">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Box Loss Gain</label>
+                                    <input type="number" id="boxInput" class="form-control" 
+                                           value="7.50" step="0.50" min="0.10" max="15">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Object Loss Gain</label>
+                                    <input type="number" id="objInput" class="form-control" 
+                                           value="1.0" step="0.1" min="0.1" max="5">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Patience</label>
+                                    <input type="number" id="patienceInput" class="form-control" 
+                                           value="100" min="10" max="300">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Save Period</label>
+                                    <input type="number" id="savePeriodInput" class="form-control" 
+                                           value="100" min="1" max="100">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Workers</label>
+                                    <input type="number" id="workersInput" class="form-control" 
+                                           value="8" min="1" max="16">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Device</label>
+                                    <select id="deviceSelect" class="form-select">
+                                        <option value="cpu">CPU</option>
+                                        <option value="0">GPU 0</option>
+                                        <option value="1">GPU 1</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Conf Threshold</label>
+                                    <input type="number" id="confInput" class="form-control" 
+                                           value="0.001" step="0.001" min="0.001" max="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">NMS IoU</label>
+                                    <input type="number" id="nmsIouInput" class="form-control" 
+                                           value="0.6" step="0.05" min="0.1" max="0.9">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Label Smoothing</label>
+                                    <input type="number" id="labelSmoothingInput" class="form-control" 
+                                           value="0.0" step="0.01" min="0" max="0.2">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Dropout</label>
+                                    <input type="number" id="dropoutInput" class="form-control" 
+                                           value="0.0" step="0.01" min="0" max="0.5">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="augmentCheck" checked>
+                                        <label class="form-check-label" for="augmentCheck">
+                                            Data Augmentation
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="pretrained" checked>
+                                        <label class="form-check-label" for="pretrained">
+                                            Use Pretrained Weights
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Augmentation Settings -->
+                            <div id="augmentationSettings">
+                                <h6 class="mt-3 mb-2">Augmentation Settings</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">HSV Hue</label>
+                                        <input type="number" id="hsvHueInput" class="form-control" 
+                                               value="0.015" step="0.001" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">HSV Saturation</label>
+                                        <input type="number" id="hsvSatInput" class="form-control" 
+                                               value="0.7" step="0.1" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">HSV Value</label>
+                                        <input type="number" id="hsvValInput" class="form-control" 
+                                               value="0.4" step="0.1" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Degrees</label>
+                                        <input type="number" id="degreesInput" class="form-control" 
+                                               value="0.0" step="1" min="-180" max="180">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Translate</label>
+                                        <input type="number" id="translateInput" class="form-control" 
+                                               value="0.1" step="0.01" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Scale</label>
+                                        <input type="number" id="scaleInput" class="form-control" 
+                                               value="0.5" step="0.1" min="0" max="3">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Shear</label>
+                                        <input type="number" id="shearInput" class="form-control" 
+                                               value="0.0" step="0.1" min="-10" max="10">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Perspective</label>
+                                        <input type="number" id="perspectiveInput" class="form-control" 
+                                               value="0.0" step="0.0001" min="0" max="0.001">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Flip UD</label>
+                                        <input type="number" id="flipudInput" class="form-control" 
+                                               value="0.0" step="0.1" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Flip LR</label>
+                                        <input type="number" id="fliplrInput" class="form-control" 
+                                               value="0.5" step="0.1" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Mosaic</label>
+                                        <input type="number" id="mosaicInput" class="form-control" 
+                                               value="1.0" step="0.1" min="0" max="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Mixup</label>
+                                        <input type="number" id="mixupInput" class="form-control" 
+                                               value="0.0" step="0.1" min="0" max="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Training Control -->
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <button id="startTraining" class="btn btn-primary me-2">
+                                    <i class="fas fa-play"></i> Start Training
+                                </button>
+                                <button id="saveConfig" class="btn btn-outline-secondary">
+                                    <i class="fas fa-save"></i> Save Config
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="trainingStatus" class="text-muted">Ready</div>
+                                <div class="progress mt-2" style="display: none;" id="trainingProgress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        new Sortable(document.getElementById("sidebar-widgets"), {
+            animation: 150,
+            handle: ".card-header",
+            ghostClass: "sortable-ghost"
+        });
+
+        new Sortable(document.getElementById("main-widgets"), {
+            animation: 150,
+            handle: ".card-header",
+            ghostClass: "sortable-ghost"
+        });
+    });
+
+    document.getElementById('captureToSplit').addEventListener('change', function() {
+        const label = document.getElementById('captureToSplitLabel');
+        if (this.checked) {
+            label.textContent = 'Save to Train';
+            this.value = 'train';
+        } else {
+            label.textContent = 'Save to Val';
+            this.value = 'val';
+        }
+    });
+
+    document.getElementById('captureToSplit').value = 'train';
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log('Workspace script loading...');
+
+    const socket = io();
+    let currentSplit = 'train';
+    let currentImage = null;
+    let currentLabels = [];
+    let classes = [];
+    let selectedClass = 0;
+    let isDrawing = false;
+    let startX = 0, startY = 0;
+    let moveOffsetX = 0, moveOffsetY = 0;
+    let currentBox = null;
+    let isResizing = false;
+    let resizeHandle = null;
+    let selectedLabelIndex = -1;
+    let isMoving = false;
+    let currentImages = [];
+    let currentImageIndex = -1;
+    let resizeStartBox = null;
+    let canvas, ctx;
+
+    let currentTaskType = 'detect';
+    let segmentPoints = [];
+    let obbPoints = [];
+    let isDrawingSegment = false;
+    let isDrawingOBB = false;
+    let selectedPointIndex = -1;
+    let isDraggingPoint = false;
+    let isMovingPolygon = false;
+    let polygonMoveStart = {x: 0, y: 0};
+
+    let imageObj = new Image();
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    const MIN_SCALE = 0.5;
+    const MAX_SCALE = 5;
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing...');
+        
+        canvas = document.getElementById('annotationCanvas');
+        if (!canvas) {
+            console.error('Canvas not found!');
+            return;
+        }
+        ctx = canvas.getContext('2d');
+        
+        loadAvailableCameras();
+        loadClasses();
+        loadImages();
+        loadTrainingConfig();
+        loadAvailableModels();
+
+        loadTaskType();
+
+    document.getElementById('taskTypeSelect')?.addEventListener('change', async function() {
+        const newTaskType = this.value;
+        if (confirm(`Switch to ${newTaskType} mode? This will affect how labels are created and saved.`)) {
+            await setTaskType(newTaskType);
+        } else {
+            this.value = currentTaskType;
+        }
+    });
+
+    document.getElementById('zoomIn')?.addEventListener('click', () => zoomCanvas(1.2));
+    document.getElementById('zoomOut')?.addEventListener('click', () => zoomCanvas(0.8));
+    document.getElementById('zoomReset')?.addEventListener('click', resetZoom);
+
+
+
+    const startCameraBtn = document.getElementById('startCamera');
+    if (startCameraBtn) {
+        startCameraBtn.addEventListener('click', startCamera);
+    }
+    
+    const stopCameraBtn = document.getElementById('stopCamera');
+    if (stopCameraBtn) {
+        stopCameraBtn.addEventListener('click', stopCamera);
+    }
+    
+    const captureBtn = document.getElementById('captureImage');
+    if (captureBtn) {
+        captureBtn.addEventListener('click', captureImage);
+    }
+    
+    const addClassBtn = document.getElementById('addClass');
+    if (addClassBtn) {
+        addClassBtn.addEventListener('click', addClass);
+    }
+    
+    const showTrainBtn = document.getElementById('showTrain');
+    if (showTrainBtn) {
+        showTrainBtn.addEventListener('click', () => switchSplit('train'));
+    }
+    
+    const showValBtn = document.getElementById('showVal');
+    if (showValBtn) {
+        showValBtn.addEventListener('click', () => switchSplit('val'));
+    }
+    
+    const saveLabelsBtn = document.getElementById('saveLabels');
+    if (saveLabelsBtn) {
+        saveLabelsBtn.addEventListener('click', saveLabels);
+    }
+    
+    const clearLabelsBtn = document.getElementById('clearLabels');
+    if (clearLabelsBtn) {
+        clearLabelsBtn.addEventListener('click', clearLabels);
+    }
+    
+    const startTrainingBtn = document.getElementById('startTraining');
+    if (startTrainingBtn) {
+        startTrainingBtn.addEventListener('click', startTraining);
+    }
+    
+    const saveConfigBtn = document.getElementById('saveConfig');
+    if (saveConfigBtn) {
+        saveConfigBtn.addEventListener('click', saveTrainingConfig);
+    }
+    
+    const prevBtn = document.getElementById('prevImage');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', loadPreviousImage);
+    }
+    
+    const nextBtn = document.getElementById('nextImage');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', loadNextImage);
+    }
+
+if (canvas) {
+    canvas.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    canvas.addEventListener('mouseup', handleCanvasMouseUp);
+    canvas.addEventListener('contextmenu', deleteBox);
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    
+    // ADD THIS NEW EVENT LISTENER
+    canvas.addEventListener('mouseenter', function(e) {
+        const rect = canvas.getBoundingClientRect();
+        cursorX = e.clientX - rect.left;
+        cursorY = e.clientY - rect.top;
+        drawLabels();
+    });
+    
+    // ADD THIS NEW EVENT LISTENER
+    canvas.addEventListener('mouseleave', function() {
+        cursorX = null;
+        cursorY = null;
+        drawLabels();
+    });
+}
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Delete' && selectedLabelIndex >= 0) {
+            currentLabels.splice(selectedLabelIndex, 1);
+            selectedLabelIndex = -1;
+            drawLabels();
+        }
+        if (e.key === 'Escape') {
+            selectedLabelIndex = -1;
+            drawLabels();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault(); 
+            saveLabels();
+        }
+        if (e.key === 'ArrowLeft' && !e.target.matches('input')) {
+            e.preventDefault();
+            loadPreviousImage();
+        }
+        if (e.key === 'ArrowRight' && !e.target.matches('input')) {
+            e.preventDefault();
+            loadNextImage();
+        }
+    });
+    
+    const newClassInput = document.getElementById('newClassName');
+    if (newClassInput) {
+        newClassInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addClass();
+            }
+        });
+    }
+
+    canvas.addEventListener('dblclick', function(e) {
+        if (currentTaskType === 'segment' && isDrawingSegment && segmentPoints.length >= 3) {
+            currentLabels.push({
+                class_id: selectedClass,
+                points: [...segmentPoints],
+                type: 'segment'
+            });
+            segmentPoints = [];
+            isDrawingSegment = false;
+            drawLabels();
+        }
+    });
+
+    console.log('Initialization complete');
+    });
+
+    document.getElementById('startAutotrain')?.addEventListener('click', startAutotrain);
+    document.getElementById('saveAutoConfig')?.addEventListener('click', saveAutotrainConfig);
+    document.getElementById('loadAutoConfig')?.addEventListener('click', loadAutotrainConfig);
+    document.getElementById('startRelabel')?.addEventListener('click', startRelabel);
+    document.getElementById('addExternalModel')?.addEventListener('click', addExternalModel);
+    document.getElementById('refreshRelabelModels')?.addEventListener('click', loadRelabelModels);
+    document.getElementById('externalModelPath')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            addExternalModel();
+        }
+    });
+
+    loadRelabelModels();
+    checkAutotrainModel();
+
+    function updateCursor(e) {
+        if (!canvas || isDragging || isDrawing || isResizing || isMoving || isDraggingPoint || isMovingPolygon) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const {x: canvasX, y: canvasY} = screenToCanvas(screenX, screenY);
+
+        if (selectedLabelIndex >= 0) {
+            const handle = getResizeHandle(canvasX, canvasY);
+            if (handle) {
+                if (handle.startsWith('point_')) {
+                    canvas.style.cursor = 'move';
+                } else {
+                    const cursors = { 'nw': 'nw-resize', 'ne': 'ne-resize', 'sw': 'sw-resize', 'se': 'se-resize' };
+                    canvas.style.cursor = cursors[handle] || 'move';
+                }
+                return;
+            }
+        }
+
+        for (let i = currentLabels.length - 1; i >= 0; i--) {
+            if (isInsideLabel(canvasX, canvasY, currentLabels[i])) {
+                canvas.style.cursor = 'move';
+                return;
+            }
+        }
+
+        canvas.style.cursor = 'crosshair';
+    }
+
+    async function loadAvailableModels() {
+        try {
+            const response = await fetch('/api/models/available');
+            const data = await response.json();
+            const modelSelect = document.getElementById('modelSelect');
+            
+            if (modelSelect) {
+                modelSelect.innerHTML = '';
+                
+                if (data.models.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models found - add .pth files to models folder';
+                    modelSelect.appendChild(option);
+                } else {
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        const modelName = typeof model === 'string' ? model : model.name;
+                        const isCompatible = typeof model === 'string' ? true : model.compatible;
+                        option.value = modelName;
+                        option.textContent = modelName.replace('.pth', '') + (isCompatible ? '' : ' (incompatible)');
+                        option.disabled = !isCompatible;
+                        modelSelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+        }
+    }
+
+
+    socket.on('camera_frame', function(data) {
+        const cameraFeed = document.getElementById('cameraFeed');
+        if (cameraFeed) {
+            cameraFeed.src = 'data:image/jpeg;base64,' + data.frame;
+            cameraFeed.style.display = 'block';
+            cameraFeed.style.maxWidth = '100%';
+            cameraFeed.style.height = 'auto';
+            const placeholder = document.getElementById('cameraPlaceholder');
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        }
+    });
+
+
+    async function loadTaskType() {
+        try {
+            const response = await fetch('/api/project/task_type');
+            const data = await response.json();
+            currentTaskType = data.task_type || 'detect';
+            const select = document.getElementById('taskTypeSelect');
+            if (select) {
+                select.value = currentTaskType;
+            }
+            updateAnnotationMode();
+        } catch (error) {
+            console.error('Failed to load task type:', error);
+        }
+    }
+
+    async function setTaskType(taskType) {
+        try {
+            const response = await fetch('/api/project/task_type', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({task_type: taskType})
+            });
+            const data = await response.json();
+            if (data.success) {
+                currentTaskType = taskType;
+                updateAnnotationMode();
+                if (currentImage) {
+                    loadLabels();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to set task type:', error);
+        }
+    }
+
+    function updateAnnotationMode() {
+        const modeText = {
+            'detect': 'Draw rectangles',
+            'segment': 'Click points (double-click to finish)',
+            'obb': 'Click 4 corners'
+        };
+        const statusDiv = document.getElementById('annotationPlaceholder');
+        if (statusDiv && !currentImage) {
+            statusDiv.innerHTML = `
+                <i class="fas fa-mouse-pointer fa-3x text-muted"></i>
+                <p class="mt-2 text-muted">Select an image to annotate</p>
+                <small class="text-info">${modeText[currentTaskType]}</small>
+            `;
+        }
+    }
+
+    async function loadAvailableCameras() {
+        console.log('Loading cameras...');
+        try {
+            const response = await fetch('/api/camera/available');
+            const data = await response.json();
+            console.log('Cameras found:', data.cameras);
+            
+            const select = document.getElementById('cameraSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select Camera</option>';
+                
+                data.cameras.forEach(id => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `Camera ${id}`;
+                    select.appendChild(option);
+                });
+                
+                if (data.cameras.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = "";
+                    option.textContent = "No cameras found";
+                    select.appendChild(option);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load cameras:', error);
+        }
+    }
+
+function startCamera() {
+    console.log('Starting camera...');
+    const select = document.getElementById('cameraSelect');
+    const cameraId = select ? select.value : '';
+    const startBtn = document.getElementById('startCamera');
+
+    // ADD THIS: Get selected resolution
+    const resolutionSelect = document.getElementById('resolutionSelect');
+    const resolution = resolutionSelect ? resolutionSelect.value : '1080p';
+
+    if (!cameraId) {
+        alert('Please select a camera');
+        return;
+    }
+
+    // Disable start button to avoid double-click
+    if (startBtn) startBtn.disabled = true;
+
+    console.log('Emitting start_camera_feed event with camera_id:', cameraId, 'resolution:', resolution);
+    // MODIFY THIS LINE: Add resolution parameter
+    socket.emit('start_camera_feed', {
+        camera_id: parseInt(cameraId),
+        resolution: resolution
+    });
+
+    const captureBtn = document.getElementById('captureImage');
+    if (captureBtn) captureBtn.disabled = false;
+}
+
+function stopCamera() {
+    console.log('Stopping camera...');
+    socket.emit('stop_camera_feed');
+
+    const startBtn = document.getElementById('startCamera');
+    if (startBtn) startBtn.disabled = false; // Re-enable start button
+
+    const cameraFeed = document.getElementById('cameraFeed');
+    if (cameraFeed) cameraFeed.style.display = 'none';
+
+    const placeholder = document.getElementById('cameraPlaceholder');
+    if (placeholder) placeholder.style.display = 'block';
+
+    const captureBtn = document.getElementById('captureImage');
+    if (captureBtn) captureBtn.disabled = true;
+}
+
+    socket.on('camera_started', function(data) {
+        console.log('Camera started:', data.message);
+    });
+
+socket.on('camera_stopped', function(data) {
+    console.log('Camera stopped:', data.message);
+
+    const startBtn = document.getElementById('startCamera');
+    if (startBtn) startBtn.disabled = false; // Allow start again
+
+    const cameraFeed = document.getElementById('cameraFeed');
+    if (cameraFeed) cameraFeed.style.display = 'none';
+
+    const placeholder = document.getElementById('cameraPlaceholder');
+    if (placeholder) placeholder.style.display = 'block';
+
+    const captureBtn = document.getElementById('captureImage');
+    if (captureBtn) captureBtn.disabled = true;
+});
+
+    socket.on('camera_error', function(data) {
+        console.error('Camera error:', data.error);
+        alert('Camera error: ' + data.error);
+    });
+
+    socket.on('camera_frame', function(data) {
+        console.log('Received frame');
+        const cameraFeed = document.getElementById('cameraFeed');
+        if (cameraFeed) {
+            cameraFeed.src = 'data:image/jpeg;base64,' + data.frame;
+            cameraFeed.style.display = 'block';
+            cameraFeed.style.maxWidth = '100%';
+            cameraFeed.style.height = 'auto';
+            const placeholder = document.getElementById('cameraPlaceholder');
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        }
+    });
+
+    async function captureImage() {
+        console.log('Capturing image...');
+        const splitSelect = document.getElementById('captureToSplit');
+        const split = splitSelect ? splitSelect.value : 'train';
+        
+        try {
+            const response = await fetch('/api/camera/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({split: split})
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                loadImages();
+            } else {
+                alert(data.error || 'Capture failed');
+            }
+        } catch (error) {
+            console.error('Capture failed:', error);
+            alert('Failed to capture image');
+        }
+    }
+
+    async function loadClasses() {
+        console.log('Loading classes...');
+        try {
+            const response = await fetch('/api/project/classes');
+            const data = await response.json();
+            classes = data.classes || [];
+            updateClassesUI();
+        } catch (error) {
+            console.error('Failed to load classes:', error);
+            classes = [];
+        }
+    }
+
+    function updateClassesUI() {
+        const container = document.getElementById('classesList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        classes.forEach((className, index) => {
+            const div = document.createElement('div');
+            div.className = `d-flex justify-content-between align-items-center mb-1 p-1 rounded ${index === selectedClass ? 'bg-primary text-white' : 'bg-light'}`;
+            div.style.cursor = 'pointer';
+            
+            div.innerHTML = `
+                <span onclick="selectClass(${index})">${className}</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeClass(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function selectClass(index) {
+        selectedClass = index;
+        updateClassesUI();
+    }
+
+    async function addClass() {
+        const input = document.getElementById('newClassName');
+        if (!input) return;
+        
+        const className = input.value.trim();
+        
+        if (!className) return;
+        
+        classes.push(className);
+        input.value = '';
+        
+        await saveClasses();
+        updateClassesUI();
+    }
+
+    async function removeClass(index) {
+        if (confirm(`Delete class "${classes[index]}"?`)) {
+            classes.splice(index, 1);
+            if (selectedClass >= classes.length) {
+                selectedClass = Math.max(0, classes.length - 1);
+            }
+            await saveClasses();
+            updateClassesUI();
+        }
+    }
+
+    async function saveClasses() {
+        try {
+            await fetch('/api/project/classes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({classes: classes})
+            });
+        } catch (error) {
+            console.error('Failed to save classes:', error);
+        }
+    }
+
+    function switchSplit(split) {
+        currentSplit = split;
+        const trainBtn = document.getElementById('showTrain');
+        const valBtn = document.getElementById('showVal');
+        
+        if (trainBtn) {
+            trainBtn.classList.toggle('active', split === 'train');
+        }
+        if (valBtn) {
+            valBtn.classList.toggle('active', split === 'val');
+        }
+        
+        loadImages();
+    }
+
+    async function loadImages() {
+        console.log('Loading images for split:', currentSplit);
+        try {
+            const response = await fetch(`/api/project/images/${currentSplit}`);
+            const data = await response.json();
+            updateImagesUI(data.images || []);
+        } catch (error) {
+            console.error('Failed to load images:', error);
+        }
+    }
+
+    function updateImagesUI(images) {
+        const container = document.getElementById('imagesList');
+        if (!container) return;
+        
+        currentImages = images;
+        
+        container.innerHTML = '';
+        
+        images.forEach((image, index) => {
+            const div = document.createElement('div');
+            div.className = 'image-item';
+            div.innerHTML = `
+                <div class="d-flex align-items-center p-2 border rounded ${image.has_labels ? 'labeled' : 'unlabeled'}" id="image-${image.filename}">
+                    <img src="/images/${currentSplit}/${image.filename}" 
+                        class="image-thumbnail me-2" 
+                        onclick="loadImageForAnnotation('${image.filename}', ${index})">
+                    <div class="flex-grow-1">
+                        <small class="text-truncate d-block">${image.filename}</small>
+                        <small class="text-muted">${image.has_labels ? '✓ Labeled' : '○ No labels'}</small>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        updateNavigationButtons();
+        updateImageCounter();
+    }
+
+    function loadPreviousImage() {
+        if (currentImageIndex > 0 && currentImages.length > 0) {
+            const prevImage = currentImages[currentImageIndex - 1];
+            loadImageForAnnotation(prevImage.filename, currentImageIndex - 1);
+        }
+    }
+
+    function loadNextImage() {
+        if (currentImageIndex < currentImages.length - 1 && currentImages.length > 0) {
+            const nextImage = currentImages[currentImageIndex + 1];
+            loadImageForAnnotation(nextImage.filename, currentImageIndex + 1);
+        }
+    }
+
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById('prevImage');
+        const nextBtn = document.getElementById('nextImage');
+        
+        if (prevBtn) {
+            prevBtn.disabled = currentImageIndex <= 0 || currentImages.length === 0;
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = currentImageIndex >= currentImages.length - 1 || currentImages.length === 0;
+        }
+    }
+
+    function updateImageCounter() {
+        const counter = document.getElementById('imageCounter');
+        if (counter) {
+            if (currentImages.length === 0) {
+                counter.textContent = 'No images';
+            } else if (currentImageIndex >= 0) {
+                counter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+            } else {
+                counter.textContent = `${currentImages.length} images`;
+            }
+        }
+    }
+
+    function highlightCurrentImage() {
+        document.querySelectorAll('.image-item .border').forEach(el => {
+            el.classList.remove('border-primary', 'border-3');
+        });
+        
+        const currentImageEl = document.getElementById(`image-${currentImage}`);
+        if (currentImageEl) {
+            currentImageEl.classList.add('border-primary', 'border-3');
+        }
+    }
+
+    async function loadImageForAnnotation(filename, index = -1) {
+        console.log('Loading image for annotation:', filename);
+        currentImage = filename;
+        
+        if (index === -1) {
+            index = currentImages.findIndex(img => img.filename === filename);
+        }
+        currentImageIndex = index;
+        segmentPoints = [];
+        obbPoints = [];
+        isDrawingSegment = false;
+        isDrawingOBB = false;
+        
+        highlightCurrentImage();
+        
+        imageObj.onload = function() {
+            if (!canvas) return;
+            const container = document.getElementById("annotationContainer");
+
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientWidth * 0.75;
+            
+            const scale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height);
+            const x = (canvas.width - imageObj.width * scale) / 2;
+            const y = (canvas.height - imageObj.height * scale) / 2;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(imageObj, x, y, imageObj.width * scale, imageObj.height * scale);
+            
+            canvas.style.display = 'block';
+            const placeholder = document.getElementById('annotationPlaceholder');
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+            
+            const saveBtn = document.getElementById('saveLabels');
+            const clearBtn = document.getElementById('clearLabels');
+            if (saveBtn) saveBtn.disabled = false;
+            if (clearBtn) clearBtn.disabled = false;
+            
+            selectedLabelIndex = -1;
+            loadLabels();
+            updateNavigationButtons();
+            updateImageCounter();
+        };
+        
+        imageObj.src = `/images/${currentSplit}/${filename}`;
+    }
+
+    async function loadLabels() {
+        if (!currentImage) return;
+        
+        try {
+            const response = await fetch(`/api/labels/${currentSplit}/${currentImage}`);
+            const data = await response.json();
+            currentLabels = data.labels || [];
+            drawLabels();
+        } catch (error) {
+            console.error('Failed to load labels:', error);
+            currentLabels = [];
+        }
+    }
+
+    let cursorX = null;
+    let cursorY = null;
+
+    function drawLabels() {
+        drawLabelsBase();
+        drawCrosshair();
+    }
+
+    function screenToCanvas(screenX, screenY) {
+        return {
+            x: (screenX - translateX) / scale,
+            y: (screenY - translateY) / scale
+        };
+    }
+
+    function getImageCoordinates(canvasX, canvasY) {
+        const imgScale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height);
+        const offsetX = (canvas.width - imageObj.width * imgScale) / 2;
+        const offsetY = (canvas.height - imageObj.height * imgScale) / 2;
+        const imgWidth = imageObj.width * imgScale;
+        const imgHeight = imageObj.height * imgScale;
+        
+        return {
+            x: (canvasX - offsetX) / imgWidth,
+            y: (canvasY - offsetY) / imgHeight,
+            offsetX: offsetX,
+            offsetY: offsetY,
+            imgWidth: imgWidth,
+            imgHeight: imgHeight
+        };
+    }
+
+    function canvasToScreen(canvasX, canvasY) {
+        return {
+            x: canvasX * scale + translateX,
+            y: canvasY * scale + translateY
+        };
+    }
+
+    function drawResizeHandles(x, y, width, height) {
+        const handleSize = 6;
+        ctx.fillStyle = '#FF4500';
+
+        const handles = [
+            {x: x - handleSize/2, y: y - handleSize/2, type: 'nw'}, 
+            {x: x + width - handleSize/2, y: y - handleSize/2, type: 'ne'}, 
+            {x: x - handleSize/2, y: y + height - handleSize/2, type: 'sw'}, 
+            {x: x + width - handleSize/2, y: y + height - handleSize/2, type: 'se'} 
+        ];
+        
+        handles.forEach(handle => {
+            ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+        });
+    }
+
+    function getResizeHandle(canvasX, canvasY) {
+        if (selectedLabelIndex < 0 || selectedLabelIndex >= currentLabels.length) return null;
+        
+        const label = currentLabels[selectedLabelIndex];
+        const imgCoords = getImageCoordinates(canvasX, canvasY);
+        
+        if (label.type === 'detect' || !label.type) {
+            const x = imgCoords.offsetX + (label.x_center - label.width/2) * imgCoords.imgWidth;
+            const y = imgCoords.offsetY + (label.y_center - label.height/2) * imgCoords.imgHeight;
+            const width = label.width * imgCoords.imgWidth;
+            const height = label.height * imgCoords.imgHeight;
+            
+            const handleSize = 8 / scale;
+            const handles = [
+                {x: x - handleSize/2, y: y - handleSize/2, type: 'nw'},
+                {x: x + width - handleSize/2, y: y - handleSize/2, type: 'ne'},
+                {x: x - handleSize/2, y: y + height - handleSize/2, type: 'sw'},
+                {x: x + width - handleSize/2, y: y + height - handleSize/2, type: 'se'}
+            ];
+            
+            for (let handle of handles) {
+                if (canvasX >= handle.x && canvasX <= handle.x + handleSize &&
+                    canvasY >= handle.y && canvasY <= handle.y + handleSize) {
+                    return handle.type;
+                }
+            }
+        } else if ((label.type === 'segment' || label.type === 'obb') && label.points) {
+            const handleSize = 8 / scale;
+            
+            for (let i = 0; i < label.points.length; i++) {
+                const point = label.points[i];
+                const px = imgCoords.offsetX + point.x * imgCoords.imgWidth;
+                const py = imgCoords.offsetY + point.y * imgCoords.imgHeight;
+                
+                if (canvasX >= px - handleSize/2 && canvasX <= px + handleSize/2 &&
+                    canvasY >= py - handleSize/2 && canvasY <= py + handleSize/2) {
+                    return 'point_' + i;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    function isInsideLabel(canvasX, canvasY, label) {
+        const imgCoords = getImageCoordinates(canvasX, canvasY);
+        
+        if (label.type === 'detect' || !label.type) {
+            const x = imgCoords.offsetX + (label.x_center - label.width/2) * imgCoords.imgWidth;
+            const y = imgCoords.offsetY + (label.y_center - label.height/2) * imgCoords.imgHeight;
+            const width = label.width * imgCoords.imgWidth;
+            const height = label.height * imgCoords.imgHeight;
+            
+            return canvasX >= x && canvasX <= x + width && canvasY >= y && canvasY <= y + height;
+        } else if ((label.type === 'segment' || label.type === 'obb') && label.points) {
+            const points = label.points.map(p => ({
+                x: imgCoords.offsetX + p.x * imgCoords.imgWidth,
+                y: imgCoords.offsetY + p.y * imgCoords.imgHeight
+            }));
+            
+            let inside = false;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                const xi = points[i].x, yi = points[i].y;
+                const xj = points[j].x, yj = points[j].y;
+                
+                const intersect = ((yi > canvasY) !== (yj > canvasY))
+                    && (canvasX < (xj - xi) * (canvasY - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+        return false;
+    }
+
+    function getClassColor(classId) {
+        const highVisibilityColors = [
+            '#FF1744',
+            '#FFEA00',
+            '#00E5FF',
+            '#00E676',
+            '#D500F9',
+            '#FF9100',
+            '#2979FF',
+            '#C51162',
+            '#AEEA00',
+            '#00B8D4', 
+            '#F50057', 
+            '#76FF03'  
+        ];
+        
+        return highVisibilityColors[classId % highVisibilityColors.length];
+    }
+    function startDrawing(e) {
+        if (isDragging) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const {x: canvasX, y: canvasY} = screenToCanvas(screenX, screenY);
+
+        if (classes.length === 0) {
+            alert('Please add at least one class before annotating');
+            return;
+        }
+
+        if (selectedLabelIndex >= 0) {
+            resizeHandle = getResizeHandle(canvasX, canvasY);
+            if (resizeHandle) {
+                const label = currentLabels[selectedLabelIndex];
+                
+                if (resizeHandle.startsWith('point_')) {
+                    selectedPointIndex = parseInt(resizeHandle.split('_')[1]);
+                    isDraggingPoint = true;
+                    return;
+                } else if (label.type === 'detect' || !label.type) {
+                    isResizing = true;
+                    const imgCoords = getImageCoordinates(canvasX, canvasY);
+                    const x1 = imgCoords.offsetX + (label.x_center - label.width/2) * imgCoords.imgWidth;
+                    const y1 = imgCoords.offsetY + (label.y_center - label.height/2) * imgCoords.imgHeight;
+                    const x2 = imgCoords.offsetX + (label.x_center + label.width/2) * imgCoords.imgWidth;
+                    const y2 = imgCoords.offsetY + (label.y_center + label.height/2) * imgCoords.imgHeight;
+                    resizeStartBox = {x1, y1, x2, y2};
+                    return;
+                }
+            }
+        }
+
+        for (let i = currentLabels.length - 1; i >= 0; i--) {
+            if (isInsideLabel(canvasX, canvasY, currentLabels[i])) {
+                selectedLabelIndex = i;
+                const label = currentLabels[i];
+                const imgCoords = getImageCoordinates(canvasX, canvasY);
+                
+                if (label.type === 'detect' || !label.type) {
+                    isMoving = true;
+                    const x = imgCoords.offsetX + (label.x_center - label.width/2) * imgCoords.imgWidth;
+                    const y = imgCoords.offsetY + (label.y_center - label.height/2) * imgCoords.imgHeight;
+                    moveOffsetX = canvasX - x;
+                    moveOffsetY = canvasY - y;
+                } else if (label.type === 'segment' || label.type === 'obb') {
+                    isMovingPolygon = true;
+                    polygonMoveStart = {x: canvasX, y: canvasY};
+                }
+                return;
+            }
+        }
+
+        selectedLabelIndex = -1;
+
+        if (currentTaskType === 'detect') {
+            startX = canvasX;
+            startY = canvasY;
+            isDrawing = true;
+        } else if (currentTaskType === 'segment') {
+            if (!isDrawingSegment) {
+                segmentPoints = [];
+                isDrawingSegment = true;
+            }
+            const imgCoords = getImageCoordinates(canvasX, canvasY);
+            const normX = (canvasX - imgCoords.offsetX) / imgCoords.imgWidth;
+            const normY = (canvasY - imgCoords.offsetY) / imgCoords.imgHeight;
+            
+            if (normX >= 0 && normX <= 1 && normY >= 0 && normY <= 1) {
+                segmentPoints.push({x: normX, y: normY});
+                drawLabels();
+            }
+        } else if (currentTaskType === 'obb') {
+            if (!isDrawingOBB) {
+                obbPoints = [];
+                isDrawingOBB = true;
+            }
+            if (obbPoints.length < 4) {
+                const imgCoords = getImageCoordinates(canvasX, canvasY);
+                const normX = (canvasX - imgCoords.offsetX) / imgCoords.imgWidth;
+                const normY = (canvasY - imgCoords.offsetY) / imgCoords.imgHeight;
+                
+                if (normX >= 0 && normX <= 1 && normY >= 0 && normY <= 1) {
+                    obbPoints.push({x: normX, y: normY});
+                    drawLabels();
+                    
+                    if (obbPoints.length === 4) {
+                        currentLabels.push({
+                            class_id: selectedClass,
+                            points: [...obbPoints],
+                            type: 'obb'
+                        });
+                        obbPoints = [];
+                        isDrawingOBB = false;
+                        drawLabels();
+                    }
+                }
+            }
+        }
+    }
+
+    function draw(e) {
+        if (!canvas) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const {x: canvasX, y: canvasY} = screenToCanvas(screenX, screenY);
+
+        if (isDraggingPoint && selectedLabelIndex >= 0 && selectedPointIndex >= 0) {
+            const label = currentLabels[selectedLabelIndex];
+            const imgCoords = getImageCoordinates(canvasX, canvasY);
+            
+            const normX = Math.max(0, Math.min(1, (canvasX - imgCoords.offsetX) / imgCoords.imgWidth));
+            const normY = Math.max(0, Math.min(1, (canvasY - imgCoords.offsetY) / imgCoords.imgHeight));
+            
+            label.points[selectedPointIndex] = {x: normX, y: normY};
+            drawLabels();
+            return;
+        }
+
+        if (isMovingPolygon && selectedLabelIndex >= 0) {
+            const label = currentLabels[selectedLabelIndex];
+            const imgCoords = getImageCoordinates(canvasX, canvasY);
+            
+            const deltaX = (canvasX - polygonMoveStart.x) / imgCoords.imgWidth;
+            const deltaY = (canvasY - polygonMoveStart.y) / imgCoords.imgHeight;
+            
+            label.points = label.points.map(p => ({
+                x: Math.max(0, Math.min(1, p.x + deltaX)),
+                y: Math.max(0, Math.min(1, p.y + deltaY))
+            }));
+            
+            polygonMoveStart = {x: canvasX, y: canvasY};
+            drawLabels();
+            return;
+        }
+
+        if (isResizing && selectedLabelIndex >= 0 && resizeStartBox) {
+            const label = currentLabels[selectedLabelIndex];
+            let {x1, y1, x2, y2} = resizeStartBox;
+
+            switch(resizeHandle) {
+                case 'nw': x1 = canvasX; y1 = canvasY; break;
+                case 'ne': x2 = canvasX; y1 = canvasY; break;
+                case 'sw': x1 = canvasX; y2 = canvasY; break;
+                case 'se': x2 = canvasX; y2 = canvasY; break;
+            }
+
+            const imgCoords = getImageCoordinates(canvasX, canvasY);
+            const minX = Math.min(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxX = Math.max(x1, x2);
+            const maxY = Math.max(y1, y2);
+
+            label.x_center = ((minX + maxX) / 2 - imgCoords.offsetX) / imgCoords.imgWidth;
+            label.y_center = ((minY + maxY) / 2 - imgCoords.offsetY) / imgCoords.imgHeight;
+            label.width = (maxX - minX) / imgCoords.imgWidth;
+            label.height = (maxY - minY) / imgCoords.imgHeight;
+
+            drawLabels();
+            return;
+        }
+
+        if (isMoving && selectedLabelIndex >= 0) {
+            const label = currentLabels[selectedLabelIndex];
+            const imgCoords = getImageCoordinates(canvasX, canvasY);
+            const boxWidth = label.width * imgCoords.imgWidth;
+            const boxHeight = label.height * imgCoords.imgHeight;
+
+            const newX = canvasX - moveOffsetX;
+            const newY = canvasY - moveOffsetY;
+
+            label.x_center = (newX + boxWidth / 2 - imgCoords.offsetX) / imgCoords.imgWidth;
+            label.y_center = (newY + boxHeight / 2 - imgCoords.offsetY) / imgCoords.imgHeight;
+
+            drawLabels();
+            return;
+        }
+
+        if (isDrawing) {
+            drawLabelsBase();
+            
+            ctx.save();
+            ctx.translate(translateX, translateY);
+            ctx.scale(scale, scale);
+            
+            ctx.strokeStyle = getClassColor(selectedClass);
+            ctx.lineWidth = 3 / scale;
+            ctx.strokeRect(startX, startY, canvasX - startX, canvasY - startY);
+            
+            ctx.fillStyle = getClassColor(selectedClass) + '33';
+            ctx.fillRect(startX, startY, canvasX - startX, canvasY - startY);
+            
+            ctx.restore();
+            
+            drawCrosshair();
+            return;
+        }
+    }
+
+    function drawLabelsBase() {
+        if (!canvas || !imageObj.complete) return;
+
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(translateX, translateY);
+        ctx.scale(scale, scale);
+        
+        const imgScale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height);
+        const offsetX = (canvas.width - imageObj.width * imgScale) / 2;
+        const offsetY = (canvas.height - imageObj.height * imgScale) / 2;
+        const imgWidth = imageObj.width * imgScale;
+        const imgHeight = imageObj.height * imgScale;
+
+        ctx.drawImage(imageObj, offsetX, offsetY, imgWidth, imgHeight);
+
+    currentLabels.forEach((label, index) => {
+        if (label.type === 'detect' || !label.type) {
+            const x = offsetX + (label.x_center - label.width / 2) * imgWidth;
+            const y = offsetY + (label.y_center - label.height / 2) * imgHeight;
+            const width = label.width * imgWidth;
+            const height = label.height * imgHeight;
+
+            ctx.strokeStyle = index === selectedLabelIndex ? '#FF4500' : getClassColor(label.class_id);
+            ctx.lineWidth = (index === selectedLabelIndex ? 3 : 2) / scale;
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.fillStyle = getClassColor(label.class_id);
+            ctx.font = `${12 / scale}px Arial`;
+            ctx.fillText(classes[label.class_id] || 'Unknown', x, y - 5 / scale);
+
+            if (index === selectedLabelIndex) {
+                drawResizeHandles(x, y, width, height);
+            }
+        } else if (label.type === 'segment' && label.points) {
+            ctx.beginPath();
+            ctx.strokeStyle = index === selectedLabelIndex ? '#FF4500' : getClassColor(label.class_id);
+            ctx.lineWidth = (index === selectedLabelIndex ? 3 : 2) / scale;
+            ctx.fillStyle = getClassColor(label.class_id) + '33';
+            
+            label.points.forEach((point, i) => {
+                const x = offsetX + point.x * imgWidth;
+                const y = offsetY + point.y * imgHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+            
+            label.points.forEach(point => {
+                const x = offsetX + point.x * imgWidth;
+                const y = offsetY + point.y * imgHeight;
+                ctx.fillStyle = '#FF4500';
+                ctx.fillRect(x - 3/scale, y - 3/scale, 6/scale, 6/scale);
+            });
+            
+            const firstPoint = label.points[0];
+            const labelX = offsetX + firstPoint.x * imgWidth;
+            const labelY = offsetY + firstPoint.y * imgHeight;
+            ctx.fillStyle = getClassColor(label.class_id);
+            ctx.font = `${12 / scale}px Arial`;
+            ctx.fillText(classes[label.class_id] || 'Unknown', labelX, labelY - 5 / scale);
+    if (index === selectedLabelIndex) {
+        label.points.forEach((point, pointIdx) => {
+            const x = offsetX + point.x * imgWidth;
+            const y = offsetY + point.y * imgHeight;
+            
+            ctx.fillStyle = pointIdx === selectedPointIndex ? '#00FF00' : '#FF4500';
+            const handleSize = 6 / scale;
+            ctx.fillRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${10 / scale}px Arial`;
+            ctx.fillText((pointIdx + 1).toString(), x + 8/scale, y - 8/scale);
+        });
+    }
+        } else if (label.type === 'obb' && label.points && label.points.length === 4) {
+            ctx.beginPath();
+            ctx.strokeStyle = index === selectedLabelIndex ? '#FF4500' : getClassColor(label.class_id);
+            ctx.lineWidth = (index === selectedLabelIndex ? 3 : 2) / scale;
+            ctx.fillStyle = getClassColor(label.class_id) + '33';
+            
+            label.points.forEach((point, i) => {
+                const x = offsetX + point.x * imgWidth;
+                const y = offsetY + point.y * imgHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+            
+            label.points.forEach(point => {
+                const x = offsetX + point.x * imgWidth;
+                const y = offsetY + point.y * imgHeight;
+                ctx.fillStyle = '#FF4500';
+                ctx.fillRect(x - 3/scale, y - 3/scale, 6/scale, 6/scale);
+            });
+            
+            const firstPoint = label.points[0];
+            const labelX = offsetX + firstPoint.x * imgWidth;
+            const labelY = offsetY + firstPoint.y * imgHeight;
+            ctx.fillStyle = getClassColor(label.class_id);
+            ctx.font = `${12 / scale}px Arial`;
+            ctx.fillText(classes[label.class_id] || 'Unknown', labelX, labelY - 5 / scale);
+    if (index === selectedLabelIndex) {
+        label.points.forEach((point, pointIdx) => {
+            const x = offsetX + point.x * imgWidth;
+            const y = offsetY + point.y * imgHeight;
+            
+            ctx.fillStyle = pointIdx === selectedPointIndex ? '#00FF00' : '#FF4500';
+            const handleSize = 6 / scale;
+            ctx.fillRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${10 / scale}px Arial`;
+            ctx.fillText((pointIdx + 1).toString(), x + 8/scale, y - 8/scale);
+        });
+    }
+        }
+    });
+
+    if (isDrawingSegment && segmentPoints.length > 0) {
+        ctx.strokeStyle = getClassColor(selectedClass);
+        ctx.lineWidth = 3 / scale;
+        ctx.fillStyle = getClassColor(selectedClass) + '33';
+        
+        ctx.beginPath();
+        segmentPoints.forEach((point, i) => {
+            const x = offsetX + point.x * imgWidth;
+            const y = offsetY + point.y * imgHeight;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        
+        segmentPoints.forEach(point => {
+            const x = offsetX + point.x * imgWidth;
+            const y = offsetY + point.y * imgHeight;
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(x - 3/scale, y - 3/scale, 6/scale, 6/scale);
+        });
+    }
+
+    if (isDrawingOBB && obbPoints.length > 0) {
+        ctx.strokeStyle = getClassColor(selectedClass);
+        ctx.lineWidth = 3 / scale;
+        
+        obbPoints.forEach((point, i) => {
+            const x = offsetX + point.x * imgWidth;
+            const y = offsetY + point.y * imgHeight;
+            
+            if (i > 0) {
+                const prevPoint = obbPoints[i-1];
+                const prevX = offsetX + prevPoint.x * imgWidth;
+                const prevY = offsetY + prevPoint.y * imgHeight;
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(x - 3/scale, y - 3/scale, 6/scale, 6/scale);
+        });
+    };
+
+        ctx.restore();
+    }
+
+    function drawCrosshair() {
+        if (cursorX !== null && cursorY !== null && !isDragging) {
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, cursorY);
+            ctx.lineTo(canvas.width, cursorY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cursorX, 0);
+            ctx.lineTo(cursorX, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px Arial';
+            ctx.fillText(`X: ${Math.round(cursorX)}, Y: ${Math.round(cursorY)} | Zoom: ${(scale * 100).toFixed(0)}%`, cursorX + 8, cursorY - 8);
+        }
+    }
+
+    function stopDrawing(e) {
+        if (isDraggingPoint) {
+            isDraggingPoint = false;
+            selectedPointIndex = -1;
+            return;
+        }
+        
+        if (isMovingPolygon) {
+            isMovingPolygon = false;
+            return;
+        }
+        
+        if (isResizing) {
+            isResizing = false;
+            resizeHandle = null;
+            resizeStartBox = null;
+            return;
+        }
+        if (isMoving) {
+            isMoving = false;
+            return;
+        }
+        if (!isDrawing) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const {x: endX, y: endY} = screenToCanvas(screenX, screenY);
+
+        const imgCoords = getImageCoordinates(endX, endY);
+
+        const x1 = (Math.min(startX, endX) - imgCoords.offsetX) / imgCoords.imgWidth;
+        const y1 = (Math.min(startY, endY) - imgCoords.offsetY) / imgCoords.imgHeight;
+        const x2 = (Math.max(startX, endX) - imgCoords.offsetX) / imgCoords.imgWidth;
+        const y2 = (Math.max(startY, endY) - imgCoords.offsetY) / imgCoords.imgHeight;
+
+        if (x2 - x1 >= 0.005 && y2 - y1 >= 0.005 &&
+            x1 >= 0 && y1 >= 0 && x2 <= 1 && y2 <= 1) {
+            currentLabels.push({
+                class_id: selectedClass,
+                x_center: (x1 + x2) / 2,
+                y_center: (y1 + y2) / 2,
+                width: x2 - x1,
+                height: y2 - y1,
+                type: 'detect'
+            });
+        }
+
+        isDrawing = false;
+        drawLabels();
+    }
+
+    function deleteBox(e) {
+        e.preventDefault();
+        
+        if (currentLabels.length === 0) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const {x: canvasX, y: canvasY} = screenToCanvas(screenX, screenY);
+        
+        for (let i = currentLabels.length - 1; i >= 0; i--) {
+            if (isInsideLabel(canvasX, canvasY, currentLabels[i])) {
+                currentLabels.splice(i, 1);
+                selectedLabelIndex = -1;
+                drawLabels();
+                break;
+            }
+        }
+    }
+
+    let lastMouseX = 0, lastMouseY = 0;
+    document.addEventListener('mousemove', function(e) {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+
+    async function saveLabels() {
+        if (!currentImage) return;
+
+        try {
+            const response = await fetch(`/api/labels/${currentSplit}/${currentImage}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({labels: currentLabels})
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showSavedMessage();
+
+                const imageWidget = document.getElementById(`image-${currentImage}`);
+                if (imageWidget) {
+                    imageWidget.classList.remove('unlabeled');
+                    imageWidget.classList.add('labeled');
+
+                    const statusText = imageWidget.querySelector('.text-muted');
+                    if (statusText) {
+                        statusText.textContent = currentLabels.length > 0 ? '✓ Labeled' : '○ No labels';
+                    }
+                }
+
+                loadImages();
+            }
+        } catch (error) {
+            console.error('Failed to save labels:', error);
+            showSavedMessage('Failed to save', true);
+        }
+    }
+
+    function showSavedMessage(text = 'Labels saved', isError = false) {
+        let msgDiv = document.getElementById('savedMessage');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'savedMessage';
+            msgDiv.style.position = 'absolute';
+            msgDiv.style.padding = '6px 10px';
+            msgDiv.style.borderRadius = '4px';
+            msgDiv.style.backgroundColor = '#28a745';
+            msgDiv.style.color = 'white';
+            msgDiv.style.fontWeight = 'bold';
+            msgDiv.style.zIndex = 9999;
+            msgDiv.style.opacity = 0;
+            msgDiv.style.transition = 'opacity 0.3s, transform 0.3s';
+            document.body.appendChild(msgDiv);
+        }
+
+        msgDiv.textContent = text;
+        msgDiv.style.backgroundColor = isError ? '#dc3545' : '#28a745';
+        msgDiv.style.left = (lastMouseX + 15) + 'px';
+        msgDiv.style.top = (lastMouseY + 15) + 'px';
+        msgDiv.style.opacity = 1;
+        msgDiv.style.transform = 'translateY(0px)';
+
+        setTimeout(() => {
+            msgDiv.style.opacity = 0;
+            msgDiv.style.transform = 'translateY(-20px)';
+        }, 1200);
+    }
+
+    function clearLabels() {
+        if (confirm('Clear all labels for this image?')) {
+            currentLabels = [];
+            drawLabels();
+        }
+    }
+
+    function getTrainingConfig() {
+        const config = {
+            model: document.getElementById('modelSelect')?.value || 'scratch',
+            epochs: document.getElementById('epochsInput')?.value || 100,
+            imgsz: document.getElementById('imageSizeSelect')?.value || 640,
+            batch: document.getElementById('batchSizeInput')?.value || 16,
+            lr0: document.getElementById('learningRateInput')?.value || 0.01,
+            momentum: document.getElementById('momentumInput')?.value || 0.937,
+            weight_decay: document.getElementById('weightDecayInput')?.value || 0.0005,
+            warmup_epochs: document.getElementById('warmupEpochsInput')?.value || 3,
+            iou: document.getElementById('iouInput')?.value || 0.7,
+            cls: document.getElementById('clsInput')?.value || 0.5,
+            box: document.getElementById('boxInput')?.value || 0.05,
+            obj: document.getElementById('objInput')?.value || 1.0,
+            patience: document.getElementById('patienceInput')?.value || 100,
+            save_period: document.getElementById('savePeriodInput')?.value || 10,
+            workers: document.getElementById('workersInput')?.value || 8,
+            device: document.getElementById('deviceSelect')?.value || 'cpu',
+            conf: document.getElementById('confInput')?.value || 0.001,
+            nms_iou: document.getElementById('nmsIouInput')?.value || 0.6,
+            label_smoothing: document.getElementById('labelSmoothingInput')?.value || 0.0,
+            dropout: document.getElementById('dropoutInput')?.value || 0.0,
+            augment: document.getElementById('augmentCheck')?.checked !== false,
+            pretrained: document.getElementById('pretrained')?.checked !== false,
+            hsv_h: document.getElementById('hsvHueInput')?.value || 0.015,
+            hsv_s: document.getElementById('hsvSatInput')?.value || 0.7,
+            hsv_v: document.getElementById('hsvValInput')?.value || 0.4,
+            degrees: document.getElementById('degreesInput')?.value || 0.0,
+            translate: document.getElementById('translateInput')?.value || 0.1,
+            scale: document.getElementById('scaleInput')?.value || 0.5,
+            shear: document.getElementById('shearInput')?.value || 0.0,
+            perspective: document.getElementById('perspectiveInput')?.value || 0.0,
+            flipud: document.getElementById('flipudInput')?.value || 0.0,
+            fliplr: document.getElementById('fliplrInput')?.value || 0.5,
+            mosaic: document.getElementById('mosaicInput')?.value || 1.0,
+            mixup: document.getElementById('mixupInput')?.value || 0.0
+        };
+        
+        return config;
+    }
+
+    async function saveTrainingConfig() {
+        const config = getTrainingConfig();
+        
+        try {
+            const response = await fetch('/api/training/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config)
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert('Training configuration saved');
+            } else {
+                alert(data.error || 'Failed to save configuration');
+            }
+        } catch (error) {
+            console.error('Failed to save config:', error);
+            alert('Failed to save configuration');
+        }
+    }
+
+    async function loadTrainingConfig() {
+        try {
+            const response = await fetch('/api/training/config');
+            const config = await response.json();
+            
+            if (config && !config.error) {
+                Object.keys(config).forEach(key => {
+                    const element = document.getElementById(key + 'Input') || 
+                                document.getElementById(key + 'Select') ||
+                                document.getElementById(key + 'Check');
+                                
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = config[key];
+                        } else {
+                            element.value = config[key];
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load config:', error);
+        }
+    }
+
+    async function startTraining() {
+        const config = getTrainingConfig();
+        const customModelName = document.getElementById('customModelName')?.value.trim();
+        if (customModelName) {
+            config.custom_model_name = customModelName.endsWith('.pth') ? 
+                customModelName : customModelName + '.pth';
+        }
+        
+        if (confirm(`Start training with ${config.model} for ${config.epochs} epochs?${customModelName ? `\nWill save best.pth as: ${config.custom_model_name}` : ''}`)) {
+            try {
+                const statusDiv = document.getElementById('trainingStatus');
+                const trainBtn = document.getElementById('startTraining');
+                const progressDiv = document.getElementById('trainingProgress');
+                
+                if (statusDiv) statusDiv.textContent = 'Starting training...';
+                if (trainBtn) trainBtn.disabled = true;
+                if (progressDiv) progressDiv.style.display = 'block';
+                
+                const response = await fetch('/api/train', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    if (statusDiv) statusDiv.textContent = 'Training started!';
+                    alert(`Training started!${data.saved_as ? `\nModel will be saved as: ${data.saved_as}` : ''}`);
+
+                } else {
+                    if (statusDiv) statusDiv.textContent = 'Training failed';
+                    alert(data.error || 'Training failed');
+                }
+            } catch (error) {
+                console.error('Training failed:', error);
+                alert('Failed to start training');
+            } finally {
+                const trainBtn = document.getElementById('startTraining');
+                if (trainBtn) trainBtn.disabled = false;
+            }
+        }
+    }
+
+    async function checkAutotrainModel() {
+        try {
+            const response = await fetch('/api/autotrain/check_model');
+            const data = await response.json();
+            
+            const statusDiv = document.getElementById('autotrainModelStatus');
+            const controlsDiv = document.getElementById('autotrainControls');
+            const modelSelectionDiv = document.getElementById('modelSelectionDiv');
+            const modelSelect = document.getElementById('modelPathSelect');
+            
+            if (data.has_model && data.models.length > 0) {
+                statusDiv.className = 'alert alert-success';
+                
+                if (data.models.length === 1) {
+                    statusDiv.textContent = `✓ Found model: ${data.models[0].relative_path} (${data.models[0].created_date})`;
+                    modelSelectionDiv.style.display = 'none';
+                } else {
+                    statusDiv.textContent = `✓ Found ${data.models.length} best.pt models`;
+                    modelSelectionDiv.style.display = 'block';
+                    
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.path;
+                        option.textContent = `${model.relative_path} - ${model.created_date} (${model.size_mb} MB)`;
+                        modelSelect.appendChild(option);
+                    });
+                }
+                
+                controlsDiv.style.display = 'block';
+                loadAutotrainConfig();
+            } else {
+                statusDiv.className = 'alert alert-warning';
+                statusDiv.textContent = '⚠ No best.pth found. Train a model first to use autotrain.';
+                controlsDiv.style.display = 'none';
+                modelSelectionDiv.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to check model:', error);
+        }
+    }
+
+    function getAutotrainConfig() {
+        return {
+            epochs: document.getElementById('autoEpochs')?.value || 50,
+            imgsz: document.getElementById('autoImgSize')?.value || 640,
+            batch: document.getElementById('autoBatch')?.value || 16,
+            device: document.getElementById('autoDevice')?.value || 'cpu',
+            conf_threshold: document.getElementById('autoConfThreshold')?.value || 0.25,
+            iou_threshold: document.getElementById('autoIouThreshold')?.value || 0.45,
+            lr0: document.getElementById('autoLr0')?.value || 0.01,
+            patience: document.getElementById('autoPatience')?.value || 50,
+            backup_enabled: document.getElementById('autoBackup')?.checked !== false
+        };
+    }
+
+    async function saveAutotrainConfig() {
+        const config = getAutotrainConfig();
+        
+        try {
+            const response = await fetch('/api/autotrain/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config)
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert('Autotrain configuration saved');
+            }
+        } catch (error) {
+            console.error('Failed to save autotrain config:', error);
+        }
+    }
+
+    async function loadAutotrainConfig() {
+        try {
+            const response = await fetch('/api/autotrain/config');
+            const config = await response.json();
+            
+            if (config && !config.error) {
+                document.getElementById('autoEpochs').value = config.epochs || 50;
+                document.getElementById('autoImgSize').value = config.imgsz || 640;
+                document.getElementById('autoBatch').value = config.batch || 16;
+                document.getElementById('autoDevice').value = config.device || 'cpu';
+                document.getElementById('autoConfThreshold').value = config.conf_threshold || 0.25;
+                document.getElementById('autoIouThreshold').value = config.iou_threshold || 0.45;
+                document.getElementById('autoLr0').value = config.lr0 || 0.01;
+                document.getElementById('autoPatience').value = config.patience || 50;
+                document.getElementById('autoBackup').checked = config.backup_enabled !== false;
+            }
+        } catch (error) {
+            console.error('Failed to load autotrain config:', error);
+        }
+    }
+
+    async function startAutotrain() {
+        const config = getAutotrainConfig();
+        
+        const modelSelect = document.getElementById('modelPathSelect');
+        const modelPath = modelSelect?.value || modelSelect?.options[0]?.value;
+        
+        if (!modelPath) {
+            alert('No model selected');
+            return;
+        }
+        
+        config.model_path = modelPath;
+        
+        const statusResponse = await fetch('/api/autotrain/status');
+        const status = await statusResponse.json();
+        
+        if (status.running) {
+            alert('Autotrain is already running!');
+            return;
+        }
+        
+        if (confirm(`Start auto training with:\n${modelPath}\n\nThis will:\n1. ${config.backup_enabled ? 'Create backup of images and labels' : 'Skip backup'}\n2. Auto-detect and label all images\n3. Retrain model for ${config.epochs} epochs`)) {
+            try {
+                const statusDiv = document.getElementById('autotrainStatus');
+                const btn = document.getElementById('startAutotrain');
+                
+                statusDiv.textContent = 'Starting autotrain...';
+                btn.disabled = true;
+                
+                const response = await fetch('/api/autotrain/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.textContent = 'Autotrain running... Check console for progress.';
+                    monitorAutotrainStatus();
+                } else {
+                    statusDiv.textContent = 'Failed: ' + (data.error || 'Unknown error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Autotrain failed:', error);
+                alert('Failed to start autotrain');
+                document.getElementById('startAutotrain').disabled = false;
+            }
+        }
+    }
+
+    function monitorAutotrainStatus() {
+        const interval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/autotrain/status');
+                const data = await response.json();
+                
+                if (!data.running) {
+                    clearInterval(interval);
+                    const statusDiv = document.getElementById('autotrainStatus');
+                    const btn = document.getElementById('startAutotrain');
+                    statusDiv.textContent = 'Autotrain completed!';
+                    btn.disabled = false;
+                    loadImages();
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }, 60000);
+    }
+
+    let availableRelabelModels = [];
+
+    async function loadRelabelModels() {
+        try {
+            const response = await fetch('/api/relabel/models');
+            const data = await response.json();
+            
+            availableRelabelModels = data.models || [];
+            updateRelabelModelsUI();
+        } catch (error) {
+            console.error('Failed to load relabel models:', error);
+        }
+    }
+
+    function updateRelabelModelsUI() {
+        const select = document.getElementById('relabelModelSelect');
+        if (!select) return;
+        
+        select.innerHTML = '';
+        
+        if (availableRelabelModels.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No models found - train a model first';
+            select.appendChild(option);
+        } else {
+            availableRelabelModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.path;
+                option.textContent = `${model.name} - ${model.created_date} (${model.size_mb} MB)`;
+                select.appendChild(option);
+            });
+        }
+    }
+
+    async function addExternalModel() {
+        const input = document.getElementById('externalModelPath');
+        const modelPath = input?.value.trim();
+        
+        if (!modelPath) {
+            alert('Please enter a model path');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/relabel/add_external_model', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({model_path: modelPath})
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                availableRelabelModels.unshift(data.model);
+                updateRelabelModelsUI();
+                
+                const select = document.getElementById('relabelModelSelect');
+                if (select) {
+                    select.value = data.model.path;
+                }
+                
+                input.value = '';
+                alert('External model added successfully');
+            } else {
+                alert(data.error || 'Failed to add model');
+            }
+        } catch (error) {
+            console.error('Failed to add external model:', error);
+            alert('Failed to add external model');
+        }
+    }
+
+    async function startRelabel() {
+        const select = document.getElementById('relabelModelSelect');
+        const modelPath = select?.value;
+        
+        if (!modelPath) {
+            alert('Please select a model');
+            return;
+        }
+        
+        const config = {
+            model_path: modelPath,
+            target_split: document.getElementById('relabelSplit')?.value || 'train',
+            mode: document.getElementById('relabelMode')?.value || 'all',
+            conf_threshold: document.getElementById('relabelConf')?.value || 0.25,
+            iou_threshold: document.getElementById('relabelIou')?.value || 0.45,
+            backup_enabled: document.getElementById('relabelBackup')?.checked !== false
+        };
+        
+        const modeText = {
+            'all': 'all images',
+            'labeled': 'only already labeled images',
+            'unlabeled': 'only unlabeled images'
+        };
+        
+        if (confirm(`Relabel ${modeText[config.mode]} in ${config.target_split} dataset?\n\n${config.backup_enabled ? 'Labels will be backed up before relabeling.' : 'No backup will be created.'}`)) {
+            try {
+                const statusDiv = document.getElementById('relabelStatus');
+                const btn = document.getElementById('startRelabel');
+                
+                statusDiv.textContent = 'Relabeling in progress...';
+                btn.disabled = true;
+                
+                const response = await fetch('/api/relabel/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.textContent = `✓ ${data.message}`;
+                    statusDiv.className = 'mt-3 text-success';
+                    alert(data.message);
+                    loadImages();
+                } else {
+                    statusDiv.textContent = `✗ ${data.error}`;
+                    statusDiv.className = 'mt-3 text-danger';
+                    alert('Relabeling failed: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Relabeling failed:', error);
+                alert('Failed to relabel images');
+                const statusDiv = document.getElementById('relabelStatus');
+                statusDiv.textContent = '✗ Failed to relabel';
+                statusDiv.className = 'mt-3 text-danger';
+            } finally {
+                const btn = document.getElementById('startRelabel');
+                btn.disabled = false;
+            }
+        }
+    }
+
+    function handleWheel(e) {
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
+        
+        if (newScale !== scale) {
+            translateX = mouseX - (mouseX - translateX) * (newScale / scale);
+            translateY = mouseY - (mouseY - translateY) * (newScale / scale);
+            scale = newScale;
+            drawLabels();
+        }
+    }
+
+    function zoomCanvas(factor) {
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
+        
+        if (newScale !== scale) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            translateX = centerX - (centerX - translateX) * (newScale / scale);
+            translateY = centerY - (centerY - translateY) * (newScale / scale);
+            scale = newScale;
+            drawLabels();
+        }
+    }
+
+    function resetZoom() {
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        drawLabels();
+    }
+
+    function handleCanvasMouseDown(e) {
+        if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+            e.preventDefault();
+            isDragging = true;
+            dragStartX = e.clientX - translateX;
+            dragStartY = e.clientY - translateY;
+            canvas.style.cursor = 'grabbing';
+            return;
+        }
+        
+        if (e.button === 0) {
+            startDrawing(e);
+        }
+    }
+
+function handleCanvasMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    cursorX = e.clientX - rect.left;
+    cursorY = e.clientY - rect.top;
+    
+    if (isDragging) {
+        e.preventDefault();
+        translateX = e.clientX - dragStartX;
+        translateY = e.clientY - dragStartY;
+        drawLabels();
+        return;
+    }
+
+    draw(e);
+
+    if (!isDrawing && !isMoving && !isResizing) {
+        updateCursor(e);
+    }
+    
+    // ADD THIS LINE AT THE END
+    if (!isDrawing && !isDragging && !isMoving && !isResizing && !isDraggingPoint && !isMovingPolygon) {
+        drawLabels();
+    }
+}
+
+    function handleCanvasMouseUp(e) {
+        if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+            isDragging = false;
+            canvas.style.cursor = 'crosshair';
+            return;
+        }
+        
+        if (e.button === 0) {
+            stopDrawing(e);
+        }
+    }
+
+</script>
+{% endblock %}

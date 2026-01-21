@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-10">
+        <!-- Main Title Card -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h1 class="card-title">
+                    <i class="fas fa-camera fa-3x text-primary mb-3"></i>
+                    <br>BILT Dataset Annotation Tool
+                </h1>
+                <p class="card-text lead">
+                    Create and manage BILT datasets with camera integration and real-time annotation
+                </p>
+                <div class="mt-4">
+                    <a href="{{ url_for('projects') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-folder-open"></i> Manage Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Row -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-plus-circle fa-2x text-success me-3"></i>
+                            <h5 class="mb-0">Create Projects</h5>
+                        </div>
+                        <p class="card-text">Set up new BILT training projects with proper folder structure</p>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProject">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </button>
+                        <div class="collapse mt-3" id="collapseProject">
+                            <div class="card card-body bg-light">
+                                <h6 class="text-success"><i class="fas fa-folder"></i> Project Structure</h6>
+                                <ul class="small mb-2">
+                                    <li><strong>train/images:</strong> Training images</li>
+                                    <li><strong>train/labels:</strong> BILT format annotations (.txt)</li>
+                                    <li><strong>val/images:</strong> Validation images</li>
+                                    <li><strong>val/labels:</strong> Validation annotations</li>
+                                    <li><strong>classes.txt:</strong> Class names (one per line)</li>
+                                    <li><strong>data.yaml:</strong> Auto-generated dataset config</li>
+                                </ul>
+                                <h6 class="text-success"><i class="fas fa-play-circle"></i> How to Use</h6>
+                                <ol class="small mb-0">
+                                    <li>Click "Manage Projects" button</li>
+                                    <li>Enter a project name and click "Create Project"</li>
+                                    <li>Load the project to start capturing and annotating images</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-video fa-2x text-info me-3"></i>
+                            <h5 class="mb-0">Camera Capture</h5>
+                        </div>
+                        <p class="card-text">Capture high-resolution images from webcam or USB cameras</p>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCamera">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </button>
+                        <div class="collapse mt-3" id="collapseCamera">
+                            <div class="card card-body bg-light">
+                                <h6 class="text-info"><i class="fas fa-camera"></i> Features</h6>
+                                <ul class="small mb-2">
+                                    <li><strong>Multiple cameras:</strong> Auto-detect available cameras</li>
+                                    <li><strong>4K support:</strong> Automatically attempts 3840x2160 resolution</li>
+                                    <li><strong>Real-time preview:</strong> Live feed via WebSocket</li>
+                                    <li><strong>Auto-naming:</strong> Images saved with timestamp</li>
+                                </ul>
+                                <h6 class="text-info"><i class="fas fa-play-circle"></i> How to Use</h6>
+                                <ol class="small mb-0">
+                                    <li>Load a project in workspace</li>
+                                    <li>Click "Start Camera" and select device</li>
+                                    <li>Position subject and click "Capture Image"</li>
+                                    <li>Images saved to train/images by default</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-edit fa-2x text-warning me-3"></i>
+                            <h5 class="mb-0">Annotation</h5>
+                        </div>
+                        <p class="card-text">Create and edit bounding box annotations in YOLO format</p>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnnotation">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </button>
+                        <div class="collapse mt-3" id="collapseAnnotation">
+                            <div class="card card-body bg-light">
+                                <h6 class="text-warning"><i class="fas fa-draw-polygon"></i> Annotation Tools</h6>
+                                <ul class="small mb-2">
+                                    <li><strong>Draw boxes:</strong> Click and drag to create bounding boxes</li>
+                                    <li><strong>Class selection:</strong> Assign classes via dropdown</li>
+                                    <li><strong>Edit/Delete:</strong> Modify or remove existing boxes</li>
+                                    <li><strong>BILT format:</strong> Normalized coordinates (x_center, y_center, width, height)</li>
+                                </ul>
+                                <h6 class="text-warning"><i class="fas fa-play-circle"></i> How to Use</h6>
+                                <ol class="small mb-0">
+                                    <li>Manage classes in "Classes" tab</li>
+                                    <li>Select an image from train/val gallery</li>
+                                    <li>Draw bounding boxes around objects</li>
+                                    <li>Assign correct class to each box</li>
+                                    <li>Annotations auto-save as .txt files</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-cogs fa-2x text-primary me-3"></i>
+                            <h5 class="mb-0">Train & Auto-label</h5>
+                        </div>
+                        <p class="card-text">Train custom BILT models and auto-label new datasets</p>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTrain">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </button>
+                        <div class="collapse mt-3" id="collapseTrain">
+                            <div class="card card-body bg-light">
+                                <h6 class="text-primary"><i class="fas fa-brain"></i> Training Features</h6>
+                                <ul class="small mb-2">
+                                    <li><strong>Local models:</strong> Place .pt models in /models folder</li>
+                                    <li><strong>Custom config:</strong> Adjust epochs, batch size, learning rate</li>
+                                    <li><strong>Augmentation:</strong> Built-in data augmentation options</li>
+                                    <li><strong>Results:</strong> Saved in project/training_run_[timestamp]</li>
+                                </ul>
+                                <h6 class="text-primary"><i class="fas fa-robot"></i> Auto-label / Re-label</h6>
+                                <ul class="small mb-2">
+                                    <li><strong>Auto-label:</strong> Use trained model to label new images</li>
+                                    <li><strong>Re-label:</strong> Update existing labels with improved model</li>
+                                    <li><strong>Confidence threshold:</strong> Filter low-confidence detections</li>
+                                    <li><strong>Backup:</strong> Auto-backup before re-labeling</li>
+                                </ul>
+                                <h6 class="text-primary"><i class="fas fa-play-circle"></i> Workflow</h6>
+                                <ol class="small mb-0">
+                                    <li>Manually annotate initial dataset (~50-100 images)</li>
+                                    <li>Train model on annotated images</li>
+                                    <li>Use best.pth to auto-label new images</li>
+                                    <li>Review and correct auto-labels</li>
+                                    <li>Re-train with expanded dataset</li>
+                                    <li>Repeat for continuous improvement</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Start Guide -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-rocket"></i> Quick Start Guide</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-list-ol"></i> Basic Workflow</h6>
+                                <ol class="small">
+                                    <li>Create new project with descriptive name</li>
+                                    <li>Define object classes in Classes tab</li>
+                                    <li>Capture or import images</li>
+                                    <li>Manually annotate training images</li>
+                                    <li>Split data into train/val sets (80/20 recommended)</li>
+                                    <li>Configure training parameters</li>
+                                    <li>Train model and monitor results</li>
+                                    <li>Use trained model for auto-labeling</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-lightbulb"></i> Best Practices</h6>
+                                <ul class="small">
+                                    <li><strong>Dataset size:</strong> Minimum 100 images per class recommended</li>
+                                    <li><strong>Image quality:</strong> Use consistent lighting and angles</li>
+                                    <li><strong>Annotation accuracy:</strong> Tight boxes improve model performance</li>
+                                    <li><strong>Class balance:</strong> Similar number of examples per class</li>
+                                    <li><strong>Validation:</strong> Keep 20% of data for validation</li>
+                                    <li><strong>Iterative training:</strong> Start small, expand dataset gradually</li>
+                                    <li><strong>Model selection:</strong> Start from scratch for speed, upgrade as needed</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

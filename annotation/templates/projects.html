@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - BILT Annotation Tool{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-folder"></i> Projects</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+                <i class="fas fa-plus"></i> New Project
+            </button>
+        </div>
+
+        <div class="row">
+            {% for project in projects %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ project.name }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Train: {{ project.train_images }} images<br>
+                                Val: {{ project.val_images }} images<br>
+                                Classes: {{ project.classes }}
+                            </small>
+                        </p>
+                        <a href="{{ url_for('load_project', project_name=project.name) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-folder-open"></i> Open
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if projects|length == 0 %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h4><i class="fas fa-info-circle"></i> No projects found</h4>
+                    <p>Create your first project to get started</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createProjectForm">
+                    <div class="mb-3">
+                        <label for="projectName" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="projectName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function createProject() {
+    const projectName = document.getElementById('projectName').value;
+    
+    if (!projectName) {
+        alert('Please enter a project name');
+        return;
+    }
+    
+    fetch('/create_project', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: projectName})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to create project');
+        }
+    });
+}
+</script>
+{% endblock %}
