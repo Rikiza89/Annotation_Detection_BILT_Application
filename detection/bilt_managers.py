@@ -242,9 +242,10 @@ class ChainDetectionManager:
             'last_step_result': None,
             'cycle_pause': False,
             'cycle_pause_start': None,
-            'last_skip_time': 0,
-            'skip_pause': False,
-            'skip_pause_step': None
+            'waiting_for_ack': False,
+            'error_message': None,
+            'wrong_object': None,
+            'error_step': None
         })
     
     @staticmethod
@@ -262,14 +263,15 @@ class ChainDetectionManager:
             class_name = d['class_name']
             step_detections[class_name] = step_detections.get(class_name, 0) + 1
         
-        # Check skip pause
-        if chain_state.get('skip_pause', False):
+        # Check if waiting for acknowledgment
+        if chain_state.get('waiting_for_ack', False):
             return detections, {
-                'step': chain_state.get('skip_pause_step', chain_state['current_step']),
-                'step_name': 'SKIP DETECTED - Waiting for acknowledgment',
+                'step': chain_state['error_step'],
+                'step_name': chain_state.get('error_step_name', 'Error'),
                 'detected': step_detections,
-                'skipped': True,
-                'skip_pause': True,
+                'error': True,
+                'error_message': chain_state.get('error_message', 'Wrong object detected'),
+                'waiting_for_ack': True,
                 'timestamp': current_time
             }
         
@@ -281,6 +283,7 @@ class ChainDetectionManager:
             if pause_remaining <= 0:
                 chain_state['cycle_pause'] = False
                 chain_state['cycle_pause_start'] = None
+                chain_state['current_step'] = 0
                 chain_state['step_start_time'] = current_time
             else:
                 return detections, {
@@ -299,58 +302,55 @@ class ChainDetectionManager:
             chain_state['cycle_pause_start'] = current_time
             return detections, {
                 'step': -1,
-                'step_name': 'Cycle Pause',
+                'step_name': 'Cycle Completed',
                 'detected': step_detections,
                 'remaining_pause': detection_settings['chain_pause_time'],
                 'timestamp': current_time
             }
         
         current_step_config = detection_settings['chain_steps'][chain_state['current_step']]
-        chain_state['current_detections'] = step_detections
+        required_classes = set(current_step_config.get('classes', {}).keys())
         
-        # Check for skip
-        is_skipped, skipped_to_step = ChainDetectionManager.check_for_skip(
-            step_detections, chain_state['current_step'], detection_settings
-        )
+        # Check for wrong objects (objects not in current step)
+        for detected_class in step_detections.keys():
+            if detected_class not in required_classes:
+                # Wrong object detected - raise error
+                chain_state['waiting_for_ack'] = True
+                chain_state['error_step'] = chain_state['current_step']
+                chain_state['error_step_name'] = current_step_config['name']
+                chain_state['error_message'] = f"Wrong object '{detected_class}' detected in step '{current_step_config['name']}'"
+                chain_state['wrong_object'] = detected_class
+                chain_state['failed_steps'] += 1
+                
+                return detections, {
+                    'step': chain_state['current_step'],
+                    'step_name': current_step_config['name'],
+                    'detected': step_detections,
+                    'error': True,
+                    'error_message': chain_state['error_message'],
+                    'wrong_object': detected_class,
+                    'waiting_for_ack': True,
+                    'timestamp': current_time
+                }
         
-        if is_skipped:
-            chain_state['skip_pause'] = True
-            chain_state['skip_pause_step'] = chain_state['current_step']
-            chain_state['last_skip_time'] = current_time
-            return detections, {
-                'step': chain_state['current_step'],
-                'step_name': current_step_config['name'],
-                'detected': step_detections,
-                'skipped': True,
-                'skip_pause': True,
-                'skipped_to_step': skipped_to_step,
-                'timestamp': current_time
-            }
-        
-        # Check step completion
+        # Check if correct objects detected with required counts
         step_completed = all(
             step_detections.get(cls, 0) >= cnt
             for cls, cnt in current_step_config.get('classes', {}).items()
         )
         
-        step_timeout = current_time - chain_state['step_start_time'] > detection_settings['chain_timeout']
-        
         if step_completed:
+            # Correct detection - advance to next step
             chain_state['current_step'] += 1
             chain_state['step_start_time'] = current_time
             chain_state['last_step_result'] = 'success'
-        elif step_timeout and detection_settings['chain_auto_advance']:
-            chain_state['failed_steps'] += 1
-            chain_state['current_step'] += 1
-            chain_state['step_start_time'] = current_time
-            chain_state['last_step_result'] = 'timeout'
         
         return detections, {
             'step': chain_state['current_step'],
             'step_name': current_step_config['name'],
             'detected': step_detections,
+            'required': current_step_config.get('classes', {}),
             'completed': step_completed,
-            'timeout': step_timeout,
             'timestamp': current_time
         }
     
@@ -398,7 +398,7 @@ class ChainDetectionManager:
             current_step_config = detection_settings['chain_steps'][chain_state['current_step']]
         
         remaining_time = max(0, detection_settings['chain_timeout'] - 
-                           (time.time() - chain_state['step_start_time']))
+                        (time.time() - chain_state['step_start_time']))
         
         pause_remaining = 0
         if chain_state['cycle_pause'] and chain_state['cycle_pause_start']:
@@ -418,10 +418,28 @@ class ChainDetectionManager:
             'step_history': chain_state['step_history'][-10:],
             'cycle_pause': chain_state['cycle_pause'],
             'pause_remaining': pause_remaining,
-            'skip_pause': chain_state.get('skip_pause', False),
-            'skipped_class_name': chain_state.get('skipped_class_name', None)
+            'waiting_for_ack': chain_state.get('waiting_for_ack', False),
+            'error': chain_state.get('waiting_for_ack', False),
+            'error_message': chain_state.get('error_message'),
+            'wrong_object': chain_state.get('wrong_object'),
+            'error_step': chain_state.get('error_step')
         }
 
+    @staticmethod
+    def acknowledge_error(chain_state):
+        """Acknowledge error and reset to error step"""
+        if chain_state.get('waiting_for_ack', False):
+            # Clear all error flags
+            chain_state['waiting_for_ack'] = False
+            chain_state['error_message'] = None
+            chain_state['wrong_object'] = None
+            chain_state['last_step_result'] = None  # Important: clear the error result
+            chain_state['step_start_time'] = time.time()
+            # Stay at the same step (error_step)
+            chain_state['current_step'] = chain_state.get('error_step', chain_state['current_step'])
+            chain_state['error_step'] = None  # Clear error step
+            return True
+        return False
 
 class DetectionProcessor:
     @staticmethod

@@ -7,651 +7,527 @@
 <meta name="theme-color" content="#4169e1">
 <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
     <title>BILT Detection</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #0f1419;
-            color: #e8eaed;
-            overflow: hidden;
-        }
-
-        /* Main Layout */
-        .app-container {
-            display: grid;
-            grid-template-rows: 60px 1fr;
-            height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: #1a1f2e;
-            border-bottom: 1px solid #2d3748;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            gap: 24px;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            color: #60a5fa;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-bar {
-            display: flex;
-            gap: 16px;
-            margin-left: auto;
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ef4444;
-        }
-
-        .status-dot.active {
-            background: #10b981;
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-        }
-
-        /* Main Content */
-        .main-content {
-            display: grid;
-            grid-template-columns: 300px 1fr 300px;
-            height: calc(100vh - 60px);
-        }
-
-        /* Sidebar */
-        .sidebar {
-            background: #1a1f2e;
-            border-right: 1px solid #2d3748;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar.right {
-            border-right: none;
-            border-left: 1px solid #2d3748;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: #1a1f2e;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
-        }
-
-        /* Panel */
-        .panel {
-            border-bottom: 1px solid #2d3748;
-            padding: 20px;
-        }
-
-        .panel-header {
-            font-size: 14px;
-            font-weight: 600;
-            color: #60a5fa;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Video Display */
-        .video-display {
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .video-stream {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 4px;
-        }
-
-        .video-overlay {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            color: #9ca3af;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .form-select, .form-input {
-            width: 100%;
-            padding: 10px 12px;
-            background: #0f1419;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            color: #e8eaed;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .form-select:focus, .form-input:focus {
-            outline: none;
-            border-color: #60a5fa;
-            background: #1a1f2e;
-        }
-
-        .form-select option {
-            background: #1a1f2e;
-            color: #e8eaed;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: #60a5fa;
-            color: #fff;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #3b82f6;
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: #fff;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #059669;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #dc2626;
-        }
-
-        .btn-secondary {
-            background: #374151;
-            color: #e8eaed;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #4b5563;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        /* Slider */
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .slider {
-            flex: 1;
-            height: 6px;
-            border-radius: 3px;
-            background: #374151;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #60a5fa;
-            cursor: pointer;
-        }
-
-        .slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #60a5fa;
-            cursor: pointer;
-            border: none;
-        }
-
-        .slider-value {
-            min-width: 45px;
-            text-align: right;
-            font-size: 13px;
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        /* Checkbox */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 0;
-        }
-
-        .checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .checkbox-label {
-            font-size: 14px;
-            color: #d1d5db;
-            cursor: pointer;
-        }
-
-        /* Class List */
-        .class-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            background: #0f1419;
-        }
-
-        .class-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-bottom: 1px solid #374151;
-        }
-
-        .class-item:last-child {
-            border-bottom: none;
-        }
-
-        .class-item:hover {
-            background: #1a1f2e;
-        }
-
-        .class-name {
-            flex: 1;
-            font-size: 13px;
-            color: #e8eaed;
-        }
-
-        .class-count-input {
-            width: 60px;
-            padding: 4px 8px;
-            background: #1a1f2e;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            color: #e8eaed;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        /* Counter Display */
-        .counter-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .counter-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: #0f1419;
-            border-radius: 6px;
-            border: 1px solid #374151;
-        }
-
-        .counter-label {
-            font-size: 13px;
-            color: #d1d5db;
-        }
-
-        .counter-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #60a5fa;
-        }
-
-        /* Chain Steps */
-        .chain-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .chain-step {
-            background: #0f1419;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            padding: 12px;
-        }
-
-        .chain-step-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .chain-step-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #e8eaed;
-        }
-
-        .chain-step-delete {
-            background: transparent;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 4px 8px;
-        }
-
-        .chain-step-classes {
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        /* Chain Status */
-        .chain-status {
-            background: #0f1419;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            padding: 12px;
-        }
-
-        .chain-status-text {
-            font-size: 13px;
-            color: #d1d5db;
-            margin-bottom: 8px;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: #374151;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #60a5fa, #3b82f6);
-            transition: width 0.3s ease;
-        }
-
-        /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .modal-content {
-            background: #1a1f2e;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            font-size: 18px;
-            font-weight: 600;
-            color: #e8eaed;
-            margin-bottom: 20px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        /* Alert Modal */
-        .alert-modal {
-            background: rgba(0, 0, 0, 0.95);
-        }
-
-        .alert-content {
-            background: linear-gradient(135deg, #dc2626, #991b1b);
-            border: 2px solid #ef4444;
-            padding: 40px;
-            text-align: center;
-            max-width: 450px;
-        }
-
-        .alert-icon {
-            font-size: 60px;
-            margin-bottom: 16px;
-        }
-
-        .alert-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .alert-message {
-            font-size: 14px;
-            margin-bottom: 8px;
-            opacity: 0.9;
-        }
-
-        .alert-detail {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 12px;
-            border-radius: 6px;
-            margin: 12px 0;
-        }
-
-        /* Chain List */
-        .chain-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: #0f1419;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .chain-list-item:hover {
-            background: #1a1f2e;
-        }
-
-        .chain-info {
-            flex: 1;
-        }
-
-        .chain-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #e8eaed;
-        }
-
-        .chain-details {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-
-        .chain-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .chain-action-btn {
-            padding: 6px 12px;
-            font-size: 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .chain-load-btn {
-            background: #10b981;
-            color: white;
-        }
-
-        .chain-delete-btn {
-            background: #ef4444;
-            color: white;
-        }
-
-        /* Utility */
-        .hidden {
-            display: none !important;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .mt-4 {
-            margin-top: 16px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 20px;
-            color: #6b7280;
-            font-size: 13px;
-        }
-
-        /* Scrollbar */
-        .class-list::-webkit-scrollbar, .modal-content::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .class-list::-webkit-scrollbar-track, .modal-content::-webkit-scrollbar-track {
-            background: #0f1419;
-        }
-
-        .class-list::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
-        }
-
-        .panel {
-            border-bottom: 1px solid #2d3748;
-            padding: 0;
-        }
-
-        .panel-header {
-            font-size: 14px;
-            font-weight: 600;
-            color: #60a5fa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .panel-header:hover {
-            background: rgba(96, 165, 250, 0.1);
-        }
-
-        .panel-toggle {
-            font-size: 12px;
-            transition: transform 0.3s ease;
-        }
-
-        .panel-toggle.collapsed {
-            transform: rotate(-90deg);
-        }
-
-        .panel-content {
-            padding: 0 20px 20px 20px;
-            max-height: 2000px;
-            overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease;
-        }
-
-        .panel-content.collapsed {
-            max-height: 0;
-            padding: 0 20px;
-        }
-    </style>
+<style>
+    /* 1. Global & Layout Base */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: #000000; /* Pure black for maximum contrast */
+        color: #ffffff;
+        overflow: hidden;
+    }
+
+    .app-container {
+        display: grid;
+        grid-template-rows: 60px 1fr;
+        height: 100vh;
+    }
+
+    /* 2. Header & Top Status Bar */
+    .header {
+        background: #0a0a0c;
+        border-bottom: 2px solid #1a1a20;
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        gap: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    .logo {
+        font-size: 22px;
+        font-weight: 800;
+        color: #00f2ff; /* Electric Cyan */
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        letter-spacing: 1px;
+    }
+
+    .status-bar {
+        display: flex;
+        gap: 20px;
+        margin-left: auto;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #a0a0b0;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #444;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .status-dot.active {
+        background: #00ff88; /* Neon Green */
+        box-shadow: 0 0 15px #00ff88, 0 0 5px #ffffff;
+    }
+
+    /* 3. Main Content Structure */
+    .main-content {
+        display: grid;
+        grid-template-columns: 320px 1fr 320px;
+        height: calc(100vh - 60px);
+        background: #050507;
+    }
+
+    .sidebar {
+        background: #0a0a0c;
+        border-right: 1px solid #1a1a20;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar.right {
+        border-right: none;
+        border-left: 1px solid #1a1a20;
+    }
+
+    /* 4. Interactive Panels */
+    .panel {
+        border-bottom: 1px solid #1a1a20;
+        padding: 0;
+    }
+
+    .panel-header {
+        font-size: 12px;
+        font-weight: 800;
+        color: #00f2ff;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        background: linear-gradient(to right, rgba(0, 242, 255, 0.05), transparent);
+        transition: all 0.2s;
+    }
+
+    .panel-header:hover {
+        background: rgba(0, 242, 255, 0.15);
+        color: #ffffff;
+    }
+
+    .panel-toggle {
+        font-size: 10px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #4a4a55;
+    }
+
+    .panel-toggle.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .panel-content {
+        padding: 0 20px 24px 20px;
+        max-height: 2000px;
+        overflow: hidden;
+        transition: all 0.4s ease;
+    }
+
+    .panel-content.collapsed {
+        max-height: 0;
+        padding: 0 20px;
+        opacity: 0;
+    }
+
+    /* 5. Video Engine Display */
+    .video-display {
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: 2px solid #0a0a0c;
+        box-shadow: inset 0 0 100px rgba(0, 242, 255, 0.05);
+    }
+
+    .video-stream {
+        max-width: 98%;
+        max-height: 98%;
+        border-radius: 2px;
+        border: 1px solid #1a1a20;
+    }
+
+    .video-overlay {
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        pointer-events: none;
+    }
+
+    .video-overlay button {
+        pointer-events: auto;
+        padding: 15px 30px;
+        font-size: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 6. Forms, Inputs & Sliders */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 11px;
+        color: #ffcc00; /* Warning Yellow for visibility */
+        margin-bottom: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .form-select, .form-input {
+        width: 100%;
+        padding: 12px;
+        background: #000000;
+        border: 1px solid #2d2d35;
+        border-radius: 4px;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .form-select:focus, .form-input:focus {
+        outline: none;
+        border-color: #00f2ff;
+        box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+    }
+
+    .form-select option {
+        background: #0a0a0c;
+        color: #ffffff;
+    }
+
+    /* Industrial Slider */
+    .slider-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .slider {
+        flex: 1;
+        height: 8px;
+        border-radius: 4px;
+        background: #1a1a20;
+        outline: none;
+        -webkit-appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        background: #00f2ff;
+        cursor: pointer;
+        box-shadow: 0 0 15px #00f2ff;
+    }
+
+    .slider-value {
+        min-width: 50px;
+        text-align: right;
+        font-size: 14px;
+        color: #00f2ff;
+        font-weight: 900;
+        font-family: monospace;
+    }
+
+    /* 7. Advanced Buttons (Factory Gradients) */
+    .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn:disabled {
+        opacity: 0.2;
+        filter: grayscale(1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #00f2ff 0%, #0066ff 100%);
+        color: #000;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #00ff88 0%, #00a357 100%);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ff3d3d 0%, #a30000 100%);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(255, 61, 61, 0.3);
+    }
+
+    .btn-secondary {
+        background: #1a1a20;
+        border: 1px solid #2d2d35;
+        color: #ffffff;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: scale(1.02);
+        filter: brightness(1.2);
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* 8. Lists & Counters */
+    .class-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #1a1a20;
+        border-radius: 4px;
+        background: #000;
+    }
+
+    .class-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-bottom: 1px solid #1a1a20;
+    }
+
+    .class-item:hover {
+        background: rgba(0, 242, 255, 0.05);
+    }
+
+    .class-name {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .class-count-input {
+        width: 65px;
+        padding: 6px;
+        background: #141417;
+        border: 1px solid #2d2d35;
+        border-radius: 4px;
+        color: #00f2ff;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .counter-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: #0a0a0c;
+        border-radius: 4px;
+        border-left: 4px solid #00f2ff;
+        margin-bottom: 10px;
+    }
+
+    .counter-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #a0a0b0;
+    }
+
+    .counter-value {
+        font-size: 20px;
+        font-weight: 900;
+        color: #ffffff;
+        text-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    /* 9. Chain Detection Elements */
+    .chain-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chain-step {
+        background: #0a0a0c;
+        border: 1px solid #1a1a20;
+        border-radius: 4px;
+        padding: 15px;
+        border-left: 3px solid #ffcc00;
+    }
+
+    .chain-step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .chain-step-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    .step-delete-btn, .chain-step-delete {
+        background: transparent;
+        border: none;
+        color: #ff3d3d;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .chain-status {
+        background: #000;
+        border: 1px solid #1a1a20;
+        border-radius: 4px;
+        padding: 15px;
+        box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.05);
+    }
+
+    .progress-bar {
+        height: 10px;
+        background: #1a1a20;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00f2ff, #0066ff);
+        box-shadow: 0 0 15px #00f2ff;
+        transition: width 0.4s ease;
+    }
+
+    /* 10. Modals & Heavy Warnings */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: #0a0a0c;
+        border: 2px solid #00f2ff;
+        border-radius: 8px;
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+    }
+
+    .modal-header {
+        font-size: 20px;
+        font-weight: 900;
+        color: #00f2ff;
+        margin-bottom: 25px;
+        text-transform: uppercase;
+    }
+
+    /* Critical Alert Style */
+    .alert-content {
+        background: linear-gradient(135deg, #700 0%, #200 100%);
+        border: 4px solid #ff3d3d;
+        padding: 50px;
+        text-align: center;
+        box-shadow: 0 0 100px rgba(255, 61, 61, 0.4);
+    }
+
+    .alert-title {
+        font-size: 32px;
+        font-weight: 900;
+        color: #ffffff;
+        text-shadow: 0 0 20px #ff3d3d;
+    }
+
+    .alert-detail {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px dashed #ff3d3d;
+        padding: 15px;
+        margin: 20px 0;
+    }
+
+    /* 11. Custom Scrollbars */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { 
+        background: #1a1a20; 
+        border: 2px solid #000;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: #00f2ff; }
+
+    /* 12. Utilities */
+    .hidden { display: none !important; }
+    .mt-4 { margin-top: 20px; }
+    .empty-state {
+        color: #4a4a55;
+        font-size: 13px;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+    }
+
+    .checkbox {
+        width: 20px;
+        height: 20px;
+        accent-color: #00f2ff;
+        cursor: pointer;
+    }
+</style>
 </head>
 <body>
     <div class="app-container">
@@ -659,7 +535,7 @@
         <div class="header">
             <div class="logo">
                 <span>🎯</span>
-                <span>YOLO Detection Pro</span>
+                <span>BILT Detection Pro</span>
             </div>
             <div class="status-bar">
                 <div class="status-item">
@@ -913,7 +789,7 @@
             </div>
         </div>
     </div>
-
+updateChainStatusDisplay 
     <script>
         
         let draggedElement = null;
@@ -1443,205 +1319,210 @@
             }
         }
 
-        function updateChainStatusDisplay() {
-            const statusDiv = document.getElementById('chain-status-text');
-            const progressDiv = document.getElementById('chain-progress');
+function updateChainStatusDisplay() {
+    const statusDiv = document.getElementById('chain-status-text');
+    const progressDiv = document.getElementById('chain-progress');
 
-            if (!window.chainTracker) {
-                window.chainTracker = {
-                    lastStep: 0,
-                    lastResult: null,
-                    lastCycle: 0,
-                    lastSkipTimestamp: 0,
-                    lastSkippedClass: null,
-                    skipAcknowledged: false
-                };
-            }
+    if (!window.chainTracker) {
+        window.chainTracker = {
+            lastStep: 0,
+            lastResult: null,
+            lastCycle: 0,
+            lastErrorTimestamp: 0,
+            lastErrorMessage: null,
+            errorAcknowledged: false
+        };
+    }
 
-            if (!chainStatus.active) {
-                statusDiv.innerHTML = 'Chain inactive';
-                progressDiv.innerHTML = '';
-                window.chainTracker = { lastStep: 0, lastResult: null, lastCycle: 0, lastSkipTimestamp: 0, lastSkippedClass: null, skipAcknowledged: false };
-                return;
-            }
+    if (!chainStatus.active) {
+        statusDiv.innerHTML = 'Chain inactive';
+        progressDiv.innerHTML = '';
+        window.chainTracker = { 
+            lastStep: 0, 
+            lastResult: null, 
+            lastCycle: 0, 
+            lastErrorTimestamp: 0, 
+            lastErrorMessage: null, 
+            errorAcknowledged: false 
+        };
+        return;
+    }
 
-            const now = Date.now();
-            const stepChanged = chainStatus.current_step !== window.chainTracker.lastStep;
-            const resultChanged = chainStatus.last_result !== window.chainTracker.lastResult;
-            const isCurrentlySkipped = chainStatus.last_result === 'timeout' || chainStatus.last_result === 'skipped';
-            
-            const skippedClassChanged = chainStatus.skipped_class_name !== window.chainTracker.lastSkippedClass && chainStatus.skipped_class_name !== null;
-            
-            if (chainStatus.skipped_class_name) {
-                window.chainTracker.lastSkippedClass = chainStatus.skipped_class_name;
-            }
-            
-            if (window.chainTracker.lastResult === 'skipped' && chainStatus.last_result === null) {
-                window.chainTracker.skipAcknowledged = false;
-            }
-            
-            if (stepChanged) {
-                window.chainTracker.skipAcknowledged = false;
-            }
-            
-            const shouldAlert = !window.chainTracker.skipAcknowledged && 
-                ((resultChanged && isCurrentlySkipped) || (skippedClassChanged && isCurrentlySkipped)) &&
-                (now - window.chainTracker.lastSkipTimestamp > 1000);
+    const now = Date.now();
+    const stepChanged = chainStatus.current_step !== window.chainTracker.lastStep;
+    const errorMessageChanged = chainStatus.error_message !== window.chainTracker.lastErrorMessage;
+    
+    // Update error message tracking
+    if (chainStatus.error_message) {
+        window.chainTracker.lastErrorMessage = chainStatus.error_message;
+    }
+    
+    // Reset acknowledgment when error is cleared
+    if (!chainStatus.waiting_for_ack && window.chainTracker.errorAcknowledged) {
+        window.chainTracker.errorAcknowledged = false;
+    }
+    
+    // Reset acknowledgment on step change
+    if (stepChanged) {
+        window.chainTracker.errorAcknowledged = false;
+    }
+    
+    // Check if we should show error alert
+    const shouldAlert = chainStatus.waiting_for_ack && 
+                       !window.chainTracker.errorAcknowledged && 
+                       errorMessageChanged &&
+                       (now - window.chainTracker.lastErrorTimestamp > 1000);
 
-            if (shouldAlert) {
-                const skippedStepIndex = chainStatus.current_step;
-                const skippedStepName = chainSteps[skippedStepIndex]?.name || 'Unknown';
-                const skippedClassName = chainStatus.skipped_class_name || 'Unknown Object';
-                
-                console.log(`Alert triggered for step ${skippedStepIndex + 1}: ${skippedStepName}, Class: ${skippedClassName}`);
-                playSkipAlert();
-                showSkipMessage(skippedStepIndex + 1, skippedStepName, skippedClassName);
-                window.chainTracker.lastSkipTimestamp = now;
-                window.chainTracker.skipAcknowledged = true;
-            }
+    if (shouldAlert) {
+        const errorStepIndex = chainStatus.current_step;
+        const errorStepName = chainSteps[errorStepIndex]?.name || 'Unknown';
+        const wrongObject = chainStatus.wrong_object || 'Unknown Object';
+        
+        console.log(`Error triggered for step ${errorStepIndex + 1}: ${errorStepName}, Wrong object: ${wrongObject}`);
+        playSkipAlert();
+        showSkipMessage(errorStepIndex + 1, errorStepName, wrongObject);
+        window.chainTracker.lastErrorTimestamp = now;
+        window.chainTracker.errorAcknowledged = true;
+    }
 
-            window.chainTracker.lastStep = chainStatus.current_step;
-            window.chainTracker.lastResult = chainStatus.last_result;
-            window.chainTracker.lastCycle = chainStatus.completed_cycles;
+    window.chainTracker.lastStep = chainStatus.current_step;
+    window.chainTracker.lastResult = chainStatus.last_result;
+    window.chainTracker.lastCycle = chainStatus.completed_cycles;
 
-            if (chainStatus.cycle_pause) {
-                statusDiv.innerHTML = `
-                    CYCLE PAUSE - Next in: ${chainStatus.pause_remaining.toFixed(1)}s<br>
-                    Completed cycles: ${chainStatus.completed_cycles}
-                `;
-                progressDiv.innerHTML = `
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 100%; background: #f59e0b;"></div>
-                    </div>
-                `;
-            } else {
-                const currentStep = chainStatus.current_step + 1;
-                const totalSteps = chainStatus.total_steps;
-                const cycles = chainStatus.completed_cycles;
-                const remainingTime = chainStatus.remaining_time;
-                
-                statusDiv.innerHTML = `
-                    Step: ${currentStep}/${totalSteps} | Cycles: ${cycles}<br>
-                    Time: ${remainingTime.toFixed(1)}s | Last: ${chainStatus.last_result || 'none'}
-                `;
+    // Display status
+    if (chainStatus.waiting_for_ack) {
+        statusDiv.innerHTML = `
+            <span style="color: #ef4444; font-weight: bold;">⚠️ ERROR - Waiting for acknowledgment</span><br>
+            Step: ${chainStatus.current_step + 1}/${chainStatus.total_steps} | Cycles: ${chainStatus.completed_cycles}
+        `;
+        progressDiv.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%; background: #ef4444;"></div>
+            </div>
+        `;
+    } else if (chainStatus.cycle_pause) {
+        statusDiv.innerHTML = `
+            CYCLE PAUSE - Next in: ${chainStatus.pause_remaining.toFixed(1)}s<br>
+            Completed cycles: ${chainStatus.completed_cycles}
+        `;
+        progressDiv.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%; background: #f59e0b;"></div>
+            </div>
+        `;
+    } else {
+        const currentStep = chainStatus.current_step + 1;
+        const totalSteps = chainStatus.total_steps;
+        const cycles = chainStatus.completed_cycles;
+        const remainingTime = chainStatus.remaining_time;
+        
+        statusDiv.innerHTML = `
+            Step: ${currentStep}/${totalSteps} | Cycles: ${cycles}<br>
+            Time: ${remainingTime.toFixed(1)}s | Last: ${chainStatus.last_result || 'none'}
+        `;
 
-                const progress = totalSteps > 0 ? (currentStep - 1) / totalSteps * 100 : 0;
-                progressDiv.innerHTML = `
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${progress}%"></div>
-                    </div>
-                `;
-            }
+        const progress = totalSteps > 0 ? (currentStep - 1) / totalSteps * 100 : 0;
+        progressDiv.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progress}%"></div>
+            </div>
+        `;
+    }
+}
+
+function showSkipMessage(stepNumber, stepName, wrongObject) {
+    const existing = document.getElementById('skip-alert-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'skip-alert-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 50px 60px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            max-width: 500px;
+            animation: scaleInShake 0.5s ease;
+            border: 5px solid #ff0000;
+        ">
+            <div style="font-size: 80px; margin-bottom: 20px; animation: pulse 1s infinite;">❌</div>
+            <h2 style="margin: 0 0 15px 0; font-size: 36px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">WRONG OBJECT!</h2>
+            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: bold;">
+                    Step ${stepNumber}: ${stepName}
+                </p>
+                <p style="margin: 0; font-size: 18px; color: #ffeb3b; font-weight: bold;">
+                    Detected: ${wrongObject}
+                </p>
+            </div>
+            <p style="margin: 0 0 25px 0; font-size: 18px; opacity: 0.95;">
+                Wrong object detected for this step!
+            </p>
+            <button onclick="closeSkipMessage()" style="
+                background: white;
+                color: #ff6b6b;
+                border: none;
+                padding: 15px 40px;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 18px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                transition: transform 0.2s;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                ACKNOWLEDGE & RETRY
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+async function closeSkipMessage() {
+    const modal = document.getElementById('skip-alert-modal');
+    if (modal) {
+        modal.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => modal.remove(), 300);
+    }
+    
+    try {
+        const response = await fetch('/api/acknowledge_error', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        console.log('Error acknowledged:', result.message);
+        
+        // Reset tracker immediately after acknowledgment
+        if (window.chainTracker) {
+            window.chainTracker.errorAcknowledged = false;
+            window.chainTracker.lastErrorMessage = null;
         }
-
-        function showSkipMessage(stepNumber, stepName, detectedClassName) {
-            const existing = document.getElementById('skip-alert-modal');
-            if (existing) existing.remove();
-
-            const modal = document.createElement('div');
-            modal.id = 'skip-alert-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.85);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                animation: fadeIn 0.3s ease;
-            `;
-
-            modal.innerHTML = `
-                <div style="
-                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-                    color: white;
-                    padding: 50px 60px;
-                    border-radius: 20px;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-                    text-align: center;
-                    max-width: 500px;
-                    animation: scaleInShake 0.5s ease;
-                    border: 5px solid #ff0000;
-                ">
-                    <div style="font-size: 80px; margin-bottom: 20px; animation: pulse 1s infinite;">⚠️</div>
-                    <h2 style="margin: 0 0 15px 0; font-size: 36px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">STEP SKIPPED!</h2>
-                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: bold;">
-                            Step ${stepNumber}: ${stepName}
-                        </p>
-                        <p style="margin: 0; font-size: 18px; color: #ffeb3b; font-weight: bold;">
-                            Detected: ${detectedClassName}
-                        </p>
-                    </div>
-                    <p style="margin: 0 0 25px 0; font-size: 18px; opacity: 0.95;">
-                        Object detected before correct step!
-                    </p>
-                    <button onclick="closeSkipMessage()" style="
-                        background: white;
-                        color: #ff6b6b;
-                        border: none;
-                        padding: 15px 40px;
-                        border-radius: 8px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        font-size: 18px;
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                        transition: transform 0.2s;
-                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        ACKNOWLEDGE
-                    </button>
-                </div>
-            `;
-
-            if (!document.getElementById('skip-alert-styles')) {
-                const style = document.createElement('style');
-                style.id = 'skip-alert-styles';
-                style.textContent = `
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-                    @keyframes fadeOut {
-                        from { opacity: 1; }
-                        to { opacity: 0; }
-                    }
-                    @keyframes scaleInShake {
-                        0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
-                        50% { transform: scale(1.05) rotate(2deg); }
-                        75% { transform: scale(0.95) rotate(-1deg); }
-                        100% { transform: scale(1) rotate(0deg); opacity: 1; }
-                    }
-                    @keyframes pulse {
-                        0%, 100% { transform: scale(1); opacity: 1; }
-                        50% { transform: scale(1.2); opacity: 0.7; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            document.body.appendChild(modal);
-        }
-
-        async function closeSkipMessage() {
-            const modal = document.getElementById('skip-alert-modal');
-            if (modal) {
-                modal.style.animation = 'fadeOut 0.3s ease';
-                setTimeout(() => modal.remove(), 300);
-            }
-            
-            try {
-                const response = await fetch('/api/acknowledge_skip', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const result = await response.json();
-                console.log('Skip acknowledged:', result.message);
-            } catch (error) {
-                console.error('Error acknowledging skip:', error);
-            }
-        }
+        
+        // Force immediate status update
+        await updateChainStatus();
+        
+    } catch (error) {
+        console.error('Error acknowledging error:', error);
+    }
+}
 
         function showStepModal() {
             if (currentClasses.length === 0) {

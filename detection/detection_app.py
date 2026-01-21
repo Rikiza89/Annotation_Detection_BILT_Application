@@ -284,14 +284,14 @@ def chain_config():
         logger.error(f"Error in chain config: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/acknowledge_skip', methods=['POST'])
-def acknowledge_skip():
-    """Acknowledge skip in chain detection"""
+@app.route('/api/acknowledge_error', methods=['POST'])
+def acknowledge_error():
+    """Acknowledge error in chain detection"""
     try:
-        result = bilt_client.acknowledge_skip()
+        result = bilt_client.acknowledge_error()
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error acknowledging skip: {str(e)}")
+        logger.error(f"Error acknowledging error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 # Chain save/load endpoints

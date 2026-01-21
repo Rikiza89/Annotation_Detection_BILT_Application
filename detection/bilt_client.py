@@ -125,9 +125,9 @@ class BILTClient:
         """Update chain configuration"""
         return self._make_request('POST', '/api/chain/config', json=config)
     
-    def acknowledge_skip(self) -> Dict[str, Any]:
-        """Acknowledge skip in chain detection"""
-        return self._make_request('POST', '/api/chain/acknowledge_skip')
+    def acknowledge_error(self) -> Dict[str, Any]:
+        """Acknowledge error in chain detection"""
+        return self._make_request('POST', '/api/chain/acknowledge_error')
     
     # Chain save/load methods
     def get_saved_chains(self) -> Dict[str, Any]:

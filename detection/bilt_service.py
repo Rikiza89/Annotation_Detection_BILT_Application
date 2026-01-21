@@ -77,13 +77,28 @@ detection_settings = {
 object_counters = {}
 detection_stats = {'total_detections': 0, 'fps': 0, 'last_detection_time': None}
 
+# chain_state = {
+#     'active': False, 'current_step': 0, 'step_start_time': None,
+#     'completed_cycles': 0, 'failed_steps': 0, 'step_history': [],
+#     'current_detections': {}, 'last_step_result': None,
+#     'cycle_pause': False, 'cycle_pause_start': None
+# }
 chain_state = {
-    'active': False, 'current_step': 0, 'step_start_time': None,
-    'completed_cycles': 0, 'failed_steps': 0, 'step_history': [],
-    'current_detections': {}, 'last_step_result': None,
-    'cycle_pause': False, 'cycle_pause_start': None
+    'active': False, 
+    'current_step': 0, 
+    'step_start_time': None,
+    'completed_cycles': 0, 
+    'failed_steps': 0, 
+    'step_history': [],
+    'current_detections': {}, 
+    'last_step_result': None,
+    'cycle_pause': False, 
+    'cycle_pause_start': None,
+    'waiting_for_ack': False,
+    'error_message': None,
+    'wrong_object': None,
+    'error_step': None
 }
-
 class RGBBalancer:
     def __init__(self):
         self.red_gain = 1.0
@@ -375,17 +390,13 @@ def chain_config():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/chain/acknowledge_skip', methods=['POST'])
-def acknowledge_skip():
+@app.route('/api/chain/acknowledge_error', methods=['POST'])
+def acknowledge_error():
     global chain_state
     try:
-        if chain_state.get('skip_pause', False):
-            chain_state['skip_pause'] = False
-            chain_state['skipped_class_name'] = None
-            chain_state['last_step_result'] = None
-            chain_state['step_start_time'] = time.time()
-            return jsonify({'success': True})
-        return jsonify({'success': False, 'message': 'No skip to acknowledge'})
+        if ChainDetectionManager.acknowledge_error(chain_state):
+            return jsonify({'success': True, 'message': 'Error acknowledged, restarting from error step'})
+        return jsonify({'success': False, 'message': 'No error to acknowledge'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
